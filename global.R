@@ -109,6 +109,9 @@ getmode <- function(v) {
 #   
 # }
 
+## Source functions #########################################################
+source("R/species_clean.R", local = T)
+
 
 ## Paths ####################################################################
 
@@ -122,10 +125,10 @@ dir.create(path_res, showWarnings = F)
 
 ## Setup ####################################################################
 
-## Add parallel computing library for Linux systems
-# os = "linux"
-os = get_os()
-if (os == "linux") library('doMC')
+# ## Add parallel computing library for Linux systems
+# # os = "linux"
+# os = get_os()
+# if (os == "linux") library('doMC')
 
 
 ## Get Global Tree Search File from internet if not already downloaded
@@ -211,7 +214,6 @@ wfo_data <- read_tsv(
   )
 
 
-## Source functions #########################################################
-source("R/species_clean.R", local = T)
+
 
 

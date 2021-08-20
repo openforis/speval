@@ -44,6 +44,7 @@ library(lcvplants) # for The Leipzig Catalogue of Vascular Plant
 library(WorldFlora)
 
 ## Parallel computation
-library(foreach)
-library(doParallel)
-library(parallel)
+library(furrr)
+# library(foreach)
+# library(doParallel)
+# library(parallel)
