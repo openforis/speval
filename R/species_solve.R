@@ -32,7 +32,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   ## !!! For testing only
   #set.seed(11)
-  .vec <- species_clean(.path = "data/NFMA_species_mess.csv") %>% 
+  .vec <- species_clean(.path = "demo/NFMA_species_mess.csv") %>% 
     filter(!is.na(input_ready)) %>% 
     #slice_sample(n = 200) %>%
     pull(input_ready) %>% 
@@ -78,7 +78,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   ## !!! For testing only: run tnrs on a job instead of the console 
   rstudioapi::jobRunScript("R-jobs/solve_lcvp.R", "LCVP", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  solved_lcvp <- read_csv("results/job_lcvp_dist2.csv", show_col_types = F)
+  solved_lcvp <- read_csv("demo/NFMA_job_lcvp_dist2.csv", show_col_types = F)
   ## !!!
   
   
@@ -122,7 +122,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   
   time2 <- Sys.time()
-  dt <- round(as.numeric(time2-time1, units = "secs"))
+  dt    <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
   message(paste0("......Nb taxons remaining unsolved: ", length(species_notsolved)))
   
@@ -152,6 +152,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   ## !!! SLICING THE TABLE IS SLOWER BUT RESULTS IN MORE MATCHES
   # genus_tropicos <- taxize::gnr_resolve(sci = input_genus, data_source_ids = .src_tropicos, with_canonical_ranks = T)
   
+  ## Run Tropicos
   ## map_dfr() should have increased performance over for loops and output directly a data frame
   input           <- species_notsolved
   slices          <- c(0:trunc(length(input) / 100) * 100, length(input))
@@ -163,6 +164,13 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
     
   }) ## End map_dfr()
   
+  
+  ## !!! For testing only: run tnrs on a job instead of the console 
+  rstudioapi::jobRunScript("R-jobs/solve_tropicos.R", "LCVP", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
+  solved_tropicos <- read_csv("demo/NFMA_job_tropicos.csv", show_col_types = F)
+  ## !!!
+  
+  
   ## Checks
   # length(unique(species_notsolved))
   # length(solved_tropicos$user_supplied_name)
@@ -171,21 +179,21 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   ## --- Arrange results ---
   ## --- Tropicos doesn't return the full set of inputs.
-  species_solved2 <- solved_tropicos %>%
-    mutate(
-      status = ,
-      
-    ) %>%
-    select(
-      input      = Submitted_Name, 
-      status     = Status, 
-      lcvp_taxon = LCVP_Accepted_Taxon, 
-      service,
-      pl_comparison  = PL_Comparison, 
-      pl_alternative = PL_Alternative, 
-      score          = Score, 
-      fuzzysum
-    )
+  # species_solved2 <- solved_tropicos %>%
+  #   mutate(
+  #     status = ,
+  #     
+  #   ) %>%
+  #   select(
+  #     input      = Submitted_Name, 
+  #     status     = Status, 
+  #     lcvp_taxon = LCVP_Accepted_Taxon, 
+  #     service,
+  #     pl_comparison  = PL_Comparison, 
+  #     pl_alternative = PL_Alternative, 
+  #     score          = Score, 
+  #     fuzzysum
+  #   )
   
   
   
@@ -213,7 +221,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
     pull(genus_input)
   
   time2 <- Sys.time()
-  dt <- round(as.numeric(time2-time1, units = "secs"))
+  dt    <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Genus solved with Tropicos", " - ", dt, " sec."))
   message(paste0("......Nb genus remaining unsolved: ", length(genus_notsolved)))
     

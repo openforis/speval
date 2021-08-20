@@ -34,6 +34,9 @@ library(taxize)
 library(rentrez) # for NCBI search 
 library(rgbif)
 
+
+# remotes::install_github("idiv-biodiversity/LCVP")
+# remotes::install_github("idiv-biodiversity/lcvplants")
 library(LCVP) ## Contain lcvp data 
 library(lcvplants) # for The Leipzig Catalogue of Vascular Plant
 # see https://idiv-biodiversity.github.io/lcvplants/articles/taxonomic_resolution_using_lcplants.html

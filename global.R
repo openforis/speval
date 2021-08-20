@@ -204,26 +204,12 @@ global_tree_search <- read_csv(paste0(path_data, "/", gts_file), show_col_types 
 
 
 ## World Flora Online 
-## --- Load WFO classification with readr::read_tsv directly from zip file and much faster than fread
-t1 <- Sys.time()
+## Load WFO classification with readr::read_tsv directly from zip file and much faster than fread
 wfo_data <- read_tsv(
   file = unz(description = paste0(wfo_path, "/", wfo_file), filename = wfo_classification), 
   col_types = cols(.default = col_character()), 
   )
-t2 <- Sys.time()
-print(t2-t1)
 
-
-# t1 <- Sys.time()
-# utils::unzip(
-#   zipfile = paste0(wfo_path, "/", wfo_file),
-#   files   = wfo_classification,  
-#   exdir   = paste0(getwd(), "/", wfo_path)
-# )
-test <- data.table::fread(input = paste0(wfo_path, "/", wfo_classification), encoding="UTF-8")
-# t2 <- Sys.time()
-# print(t2-t1)
-data(WFO.example)
 
 ## Source functions #########################################################
 source("R/species_clean.R", local = T)
