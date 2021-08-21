@@ -7,7 +7,35 @@
 
 ## Libs #####################################################################
 
-source("R/libs.R", local = T)
+#source("R/libs.R", local = T)
+## Shiny
+library(shiny)
+library(shinyjs)   # for hiding/showing objects
+library(shinydashboard)
+library(collapsibleTree)
+library(shinycssloaders)
+library(DT)
+library(leaflet)
+library(leaflet.extras)
+
+## TNRS
+library(taxize)
+library(rentrez) # for NCBI search 
+library(rgbif)
+# remotes::install_github("idiv-biodiversity/LCVP")
+# remotes::install_github("idiv-biodiversity/lcvplants")
+library(LCVP) ## Contain lcvp data 
+library(lcvplants) #
+library(WorldFlora)
+
+## Data analysis
+library(furrr)
+library(carrier)
+library(tidyverse)
+
+## General purpose
+#library(utils) ## Automatically loaded when R starts
+
 
 
 
@@ -144,11 +172,11 @@ if (!(gts_file %in% list.files("data"))) {
 }
 
 ## Get World Flora Online backbone dataset
-wfo_classification <- "classification.txt"
-wfo_file           <- "WFO_Backbone.zip"
-wfo_path           <- "data/WFO"
+wfo_class <- "classification.txt"
+wfo_file  <- "WFO_Backbone.zip"
+wfo_path  <- "data/WFO"
 
-if (!(wfo_file %in% list.files(wfo_path))) {
+if (!(wfo_class %in% list.files(wfo_path))) {
   
   message("Downloading World Flora Online backbone dataset...")
   
@@ -161,14 +189,23 @@ if (!(wfo_file %in% list.files(wfo_path))) {
     destfile = paste0(wfo_path, "/", wfo_file)
   )
   
-  # utils::unzip(
-  #   zipfile = paste0(wfo_path, "/", wfo_file), 
-  #   exdir = paste0(getwd(), "/", wfo_path)
-  #   )
+  utils::unzip(
+    zipfile = paste0(wfo_path, "/", wfo_file),
+    files   = wfo_class, 
+    exdir   = paste0(getwd(), "/", wfo_path)
+    )
+  
+  ## Somehow the data fails when loading with readr::read_tsv, so need conversion first
+  ## Needs to read the data trough data.table::fread().
+  # tmp <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8") 
+  # write_tsv(tmp, paste0(wfo_path, "/", wfo_class))
+  # rm(tmp)
+  
+  unlink(paste0(wfo_path, "/", wfo_file))
   
   time2 <- Sys.time()
   dt <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...WFO data sucessfully downloadd and extracted", " - ", dt, " sec."))
+  message(paste0("...WFO data sucessfully downloaded and extracted", " - ", dt, " sec."))
   
 }
 
@@ -199,6 +236,12 @@ src_tropicos <- taxize::gnr_datasources() %>%
   pull(id)
 
 
+## Detect the number of cores
+
+n_cores <- parallel::detectCores()
+n_cores <- if_else(n_cores <= 2, 1, n_cores - 2)
+
+
 
 ## Load data ################################################################
 
@@ -208,12 +251,15 @@ global_tree_search <- read_csv(paste0(path_data, "/", gts_file), show_col_types 
 
 ## World Flora Online 
 ## Load WFO classification with readr::read_tsv directly from zip file and much faster than fread
-wfo_data <- read_tsv(
-  file = unz(description = paste0(wfo_path, "/", wfo_file), filename = wfo_classification), 
-  col_types = cols(.default = col_character()), 
-  )
+## However classification.txt contains errors 
+# wfo_data <- read_tsv(
+#   file = unz(description = paste0(wfo_path, "/", wfo_file), filename = wfo_classification), 
+#   col_types = cols(.default = col_character()), 
+#   )
+wfo_data <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8")
 
-
+## Adapt future max.size to WFO data
+options(future.globals.maxSize = 800*1024^2)
 
 
 
