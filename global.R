@@ -25,14 +25,14 @@ library(rgbif)
 # remotes::install_github("idiv-biodiversity/LCVP")
 # remotes::install_github("idiv-biodiversity/lcvplants")
 library(LCVP) ## Contain lcvp data 
-library(lcvplants) #
+library(lcvplants)
 library(WorldFlora)
 
 ## Data analysis
 library(data.table) ## For WorldFlora.
 library(furrr)
 #> requires: future, parallel
-library(carrier)
+library(carrier) ## Crate functions and their dependencies tables to avoid loading the whole .GlobalEnv in parallel computation workers
 library(tidyverse)
 
 ## General purpose
