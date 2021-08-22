@@ -71,18 +71,13 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   ## ---
   ## --- https://idiv-biodiversity.github.io/lcvplants/articles/taxonomic_resolution_using_lcplants.html#running-lcvplants
 
-  ## Choosing data and slices
-  input <- species_init
-  slices          <- c(0:trunc(length(input) / 200) * 200, length(input))
-  slices
+  ## Choosing data
+  input  <- species_init
   
   ## --- RUN LCVP ---
   message("...Running Leipzig Catalogue of Vascular Plants.")
   time1 <- Sys.time()
-
-  ## Run directly the function, multicores integrated
   solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, synonyms = F)
-
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
@@ -99,39 +94,49 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   
   
-  ## --- RUN LCVP with furrr::future_map_dfr() ---
-  message("...Running Leipzig Catalogue of Vascular Plants.")
+  ## --- 1bis. Solve with LCVP data and WFO.match() algorythm ---------------
+  ## --- Offline
+  ## --- Data source: LCVP::tab_lcvp converted to WFO backbone
+  ## --- Algorithm: WorldFlora::WFO.match()
+  
+  ## Choosing data
+  input  <- species_init
+  
+  ## Create function to avoid loading the whole environment to the workers
+  crt_lcvp <- crate(
+    input     = input,
+    data_lcvp = data_lcvp,
+    function(.x){
+      message("Processing sequence: ", min(.x), " to ", max(.x), ".")
+      wfo_input = input[.x]
+      WorldFlora::WFO.match(wfo_input, WFO.data = data_lcvp)
+    }
+  )
+  
+  ## Make chunks
+  input_chunks <-furrr:::make_chunks(n_x = length(input), n_workers = n_cores, chunk_size = 200)
+  
+  
+  ## --- RUN WFO ---
+  message("...Running WFO.match() on LCVP data.")
+  
   time1 <- Sys.time()
-
-  ## Run with furrr::future_map* family
-  plan(multisession)
-
-  solved_lcvp <- furrr::future_map_dfr(.x = seq_along(slices[-length(slices)]), .f = function(x){
-
-    message(paste0("Sequence: ", slices[x]+1, " to ", slices[x+1], "\n"))
-    tmp_list <- input[slices[x]+1:slices[x+1]]
-    lcvplants::LCVP(tmp_list, max.distance = 2, synonyms = F, max.cores = 1)
-    #Sys.sleep(0.5)
-
-  }) ## End map_dfr()
-
-  plan(sequential)
-
+  future::plan(multisession)
+  solved_lcvp_wfoalgo <- furrr::future_map_dfr(.x = input_chunks, .f = crt_wfo, .options = furrr::furrr_options(globals = FALSE))
+  future::plan(sequential, .cleanup = T)
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
-  ## --- END RUN LCVP ---
+  message(paste0("...Taxons solved with WFO", " - ", dt, " sec."))
+  ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
-  write_csv(solved_lcvp, "demo/NFMA_job_lcvp_dist2_furrr.csv")
-  write_tsv(tibble(NULL), paste0("demo/NFMA_job_lcvp_dist2_furrr-", dt,"-secs.txt"))
+  write_csv(solved_lcvp_wfoalgo, "demo/NFMA_job_lcvp_wfoalgo.csv")
+  write_tsv(tibble(NULL), paste0("demo/NFMA_job_lcvp_wfoalgo-", dt,"-secs.txt"))
   
   # ## !!! For testing only: run tnrs on a job instead of the console 
-  # rstudioapi::jobRunScript("R-jobs/solve_lcvp_furrr.R", "LCVP_furrr", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  # solved_lcvp <- read_csv("demo/NFMA_job_lcvp_dist2_furrr.csv", show_col_types = F)
+  # rstudioapi::jobRunScript("R-jobs/solve_lcvp_wfoalgo.R", "LCVP_WFOALGO", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
+  # solved_lcvp_wfoalgo <- read_csv("demo/NFMA_job_lcvp_wfoalgo.csv", show_col_types = F)
   # ## !!!
-  
-  
   
   # ## --- Arrange results ---
   # ## Initiate output fom LVCP results as contain input species list and results.
@@ -292,11 +297,11 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   ## Create function to avoid loading the whole environment to the workers
   crt_wfo <- crate(
     input    = input,
-    wfo_data = wfo_data,
+    data_wfo = data_wfo,
     function(.x){
       message("Processing sequence: ", min(.x), " to ", max(.x), ".")
       wfo_input = input[.x]
-      WorldFlora::WFO.match(wfo_input, WFO.data = wfo_data)
+      WorldFlora::WFO.match(wfo_input, WFO.data = data_wfo)
       }
   )
 
@@ -322,7 +327,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   time1 <- Sys.time()
   future::plan(multisession)
-  solved_wfo3 <- furrr::future_map_dfr(.x = input_chunks, .f = crt_wfo, .options = furrr::furrr_options(globals = FALSE))
+  solved_wfo <- furrr::future_map_dfr(.x = input_chunks, .f = crt_wfo, .options = furrr::furrr_options(globals = FALSE))
   future::plan(sequential)
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
@@ -332,7 +337,7 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   
   ## !!! For testing only: run tnrs on a job instead of the console 
   rstudioapi::jobRunScript("R-jobs/solve_wfo.R", "WFO", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  solved_tropicos <- read_csv("demo/NFMA_job_wfo.csv", show_col_types = F)
+  solved_wfo <- read_csv("demo/NFMA_job_wfo.csv", show_col_types = F)
   ## !!!
   
   
