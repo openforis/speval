@@ -16,17 +16,13 @@ test <- tibble(input = input) %>% pull(input)
 
 ## --- RUN LCVP ---
 message("...Running Leipzig Catalogue of Vascular Plants.")
+
 time1 <- Sys.time()
-
-## Run directly the function, multicores integrated
 solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, synonyms = F)
-
 time2 <- Sys.time()
 dt    <- round(as.numeric(time2-time1, units = "secs"))
 message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
 ## --- END RUN LCVP ---
-
-
 
 ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
 write_csv(solved_lcvp, "demo/NFMA_job_lcvp_dist2.csv")
