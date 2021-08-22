@@ -101,7 +101,8 @@ species_clean <- function(.path){
       
       
       ## split in 5 to have genus / species / potential subsp. var. / potential subsp. name / left overs
-      split_input        = input_cor %>% str_to_lower() %>% str_remove("[:punct:]") %>% str_split(" ", n = 5),
+      #split_input        = input_cor %>% str_to_lower() %>% str_remove("[:punct:]") %>% str_split(" ", n = 5),
+      split_input        = input_cor %>% str_to_lower() %>% str_remove("\\.") %>% str_split(" ", n = 5), ## sOME OF THE PUNCTUATION IS USEFUL
       input_genus        = map_chr(split_input, 1, .default = NA_character_) %>% str_to_title(),
       input_epithet      = map_chr(split_input, 2, .default = NA_character_),
       input_intrasp      = map_chr(split_input, 3, .default = NA_character_),
@@ -127,6 +128,7 @@ species_clean <- function(.path){
         input_intrasp %in% check_intrasp$subvar  ~ "subvar.",
         input_intrasp %in% check_intrasp$form    ~ "f.",
         input_intrasp %in% check_intrasp$subform ~ "subf.",
+        input_intrasp == "forma"                 ~ "forma",
         TRUE ~ NA_character_
       ),
       input_intrasp_name = if_else(!is.na(input_intrasp), input_intrasp_name, NA_character_),
