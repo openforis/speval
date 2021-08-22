@@ -29,7 +29,9 @@ library(lcvplants) #
 library(WorldFlora)
 
 ## Data analysis
+library(data.table) ## For WorldFlora.
 library(furrr)
+#> requires: future, parallel
 library(carrier)
 library(tidyverse)
 
@@ -192,14 +194,8 @@ if (!(wfo_class %in% list.files(wfo_path))) {
   utils::unzip(
     zipfile = paste0(wfo_path, "/", wfo_file),
     files   = wfo_class, 
-    exdir   = paste0(getwd(), "/", wfo_path)
+    exdir   = wfo_path
     )
-  
-  ## Somehow the data fails when loading with readr::read_tsv, so need conversion first
-  ## Needs to read the data trough data.table::fread().
-  # tmp <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8") 
-  # write_tsv(tmp, paste0(wfo_path, "/", wfo_class))
-  # rm(tmp)
   
   unlink(paste0(wfo_path, "/", wfo_file))
   
@@ -208,6 +204,8 @@ if (!(wfo_class %in% list.files(wfo_path))) {
   message(paste0("...WFO data sucessfully downloaded and extracted", " - ", dt, " sec."))
   
 }
+
+
 
 # ## Solution for WFO.downlaod() not handling relative pathing: utils::unzip(save.file, exdir = save.dir)
 # dir.create("data/WFOdownload", showWarnings = F)
@@ -238,7 +236,7 @@ src_tropicos <- taxize::gnr_datasources() %>%
 
 ## Detect the number of cores
 
-n_cores <- parallel::detectCores()
+n_cores <- future::availableCores()
 n_cores <- if_else(n_cores <= 2, 1, n_cores - 2)
 
 
@@ -251,15 +249,73 @@ global_tree_search <- read_csv(paste0(path_data, "/", gts_file), show_col_types 
 
 ## World Flora Online 
 ## Load WFO classification with readr::read_tsv directly from zip file and much faster than fread
-## However classification.txt contains errors 
+## However classification.txt contains errors, requires data.table::fread()
 # wfo_data <- read_tsv(
 #   file = unz(description = paste0(wfo_path, "/", wfo_file), filename = wfo_classification), 
 #   col_types = cols(.default = col_character()), 
 #   )
-wfo_data <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8")
+data_wfo <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8")
 
-## Adapt future max.size to WFO data
-options(future.globals.maxSize = 800*1024^2)
-
+head(data_wfo)
 
 
+## Create backbone for WorldFlora::WFO.match() 
+## based on LCVP::tab_lcvp from Leipzig Catalogue of Vascular Plants
+head(LCVP::tab_lcvp)
+
+check_intrasp <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
+
+## Create dataset compatible with WFO backbone. Requires:
+## 1. unique ID
+## 2. scientific name separated from author
+## 3. replace accepted name for synonyms with ID
+
+## Address 1. and 2.
+data_lcvp1 <- LCVP::tab_lcvp %>%
+  as_tibble() %>%
+  mutate(
+    ## Make unique id
+    id_num   = 1:nrow(.),
+    id_order = trunc(log10(id_num)),
+    id_num2  = str_pad(id_num, max(id_order) + 1, pad = "0", ),
+    taxonID  = paste0("lcvp-", id_num2),
+
+    ## Split names based on space
+    split_input  = Input.Taxon %>% str_split(" ", n = 5),
+    genus        = map_chr(split_input, 1, .default = ""),
+    epithet      = map_chr(split_input, 2, .default = ""),
+    intrasp      = map_chr(split_input, 3, .default = ""),
+    intrasp_name = map_chr(split_input, 4, .default = ""),
+    leftover     = map_chr(split_input, 5, .default = ""),
+    
+    ## Separate name from authors (!!! Doesn't handle sections, too rare)
+    scientificName = if_else(
+      intrasp %in% check_intrasp,
+      paste(genus, epithet, intrasp, intrasp_name, sep = " "),
+      paste(genus, epithet, sep = " ")
+      ),
+    scientificNameAuthorship = if_else(
+      intrasp %in% check_intrasp,
+      leftover,
+      paste(intrasp, intrasp_name, leftover, sep = " ")
+      )
+  ) %>%
+  select(taxonID, scientificName, scientificNameAuthorship, taxonomicStatus = Status, family = Family, Input.Taxon, Output.Taxon)
+
+## Create a subset with accepted names only for 3.
+data_lcvp_acc <- data_lcvp1 %>% 
+  filter(taxonomicStatus == "accepted") %>% 
+  select(name_acc = Input.Taxon, acceptedNameUsageID = taxonID)
+
+## Join the accepted name ID with the table
+data_lcvp2 <- data_lcvp1 %>%
+  left_join(data_lcvp_acc, by = c("Output.Taxon" = "name_acc")) %>%
+  mutate(acceptedNameUsageID = if_else(taxonomicStatus == "accepted", "", acceptedNameUsageID)) %>%
+  select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus, family)
+
+## Make the WFO backbone
+data_lcvp <- WorldFlora::new.backbone(data_lcvp2)
+
+## !!! Remove tmp objects
+rm(check_intrasp, data_lcvp1, data_lcvp2, data_lcvp_acc, wfo_class, wfo_file, wfo_path, gts_file)
+## !!!
