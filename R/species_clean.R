@@ -14,7 +14,7 @@
 species_clean <- function(.path){
   
   ## !!! For testing only 
-  # .path <- "data/NFMA_species_mess100.csv"
+  .path <- "demo/NFMA_species_mess.csv"
   ##
   
   message("Initiating species name cleaning...")
@@ -64,11 +64,10 @@ species_clean <- function(.path){
   
   lcvp_smallgenus <- LCVP::tab_lcvp %>% 
     pull(Input.Taxon) %>% 
-    str_split(" ", n = 2, simplify=T) %>% 
-    as_tibble() %>%
-    select(genus = V1) %>%
-    distinct() %>%
-    mutate(genus_count = str_count(genus)) %>%
+    str_split(" ", n = 2) %>%
+    map_chr(1, .default = NA_character_) %>%
+    unique() %>%
+    tibble(genus = ., genus_count = str_count(.)) %>%
     filter(genus_count < 4) %>%
     pull(genus)
   
@@ -102,7 +101,7 @@ species_clean <- function(.path){
       
       ## split in 5 to have genus / species / potential subsp. var. / potential subsp. name / left overs
       #split_input        = input_cor %>% str_to_lower() %>% str_remove("[:punct:]") %>% str_split(" ", n = 5),
-      split_input        = input_cor %>% str_to_lower() %>% str_remove("\\.") %>% str_split(" ", n = 5), ## sOME OF THE PUNCTUATION IS USEFUL
+      split_input        = input_cor %>% str_to_lower() %>% str_remove("\\.") %>% str_split(" ", n = 5), ## SOME OF THE PUNCTUATION IS USEFUL
       input_genus        = map_chr(split_input, 1, .default = NA_character_) %>% str_to_title(),
       input_epithet      = map_chr(split_input, 2, .default = NA_character_),
       input_intrasp      = map_chr(split_input, 3, .default = NA_character_),
