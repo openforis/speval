@@ -13,9 +13,9 @@
 
 species_clean <- function(.path){
   
-  ## !!! For testing only 
-  .path <- "demo/NFMA_species_mess.csv"
-  ##
+  # ## !!! For testing only 
+  # .path <- "demo/NFMA_species_mess.csv"
+  # ##
   
   message("Initiating species name cleaning...")
   
@@ -28,7 +28,7 @@ species_clean <- function(.path){
   stopifnot(str_ends(.path, "csv"))
   
   ## !!! Read file 
-  sp_init <- read_csv(.path, show_col_types = F)
+  sp_init <- read_csv(.path, show_col_types = F) 
   ## !!!
 
   stopifnot("scientific_name" %in% names(sp_init))
@@ -77,21 +77,26 @@ species_clean <- function(.path){
     mutate(
       input_cor = scientific_name %>% 
         
-        ## Remove multiple spaces, leading and trailing spaces, coma, numbers
-        ## https://stackoverflow.com/questions/25707647/merge-multiple-spaces-to-single-space-re$move-trailing-leading-spaces
-        str_replace_all("\\s+", " ") %>% 
-        str_trim() %>%
-        str_replace_all(","    , "") %>%
-        str_replace_all("[:digit:]", "") %>%
-        
-        ## Insert space when missing after a ".". ex. Blahblah blah var.blahblah
-        ## https://stackoverflow.com/questions/64492572/regex-in-r-to-add-space-after-period-if-not-present
-        str_replace_all("\\.(?=[A-Za-z])", ". ") %>%
-        
         ## Remove dual names after / or \n separators
         str_replace("\\\n.*", "") %>%
         str_replace(" /.*", "") %>%
         str_replace("/.*", "") %>%
+        
+        ## Remove question marks, comas and digits
+        str_replace_all(","    , "") %>%
+        str_replace_all("\\?"    , "") %>%
+        str_replace_all("[:digit:]", "") %>%
+        
+        ## Remove multiple spaces, leading and trailing spaces
+        ## https://stackoverflow.com/questions/25707647/merge-multiple-spaces-to-single-space-re$move-trailing-leading-spaces
+        ## Replaced by str_squish()
+        #str_replace_all("\\s+", " ") %>% 
+        #str_trim() %>%
+        str_squish() %>%
+        
+        ## Insert space when missing after a ".". ex. Blahblah blah var.blahblah
+        ## https://stackoverflow.com/questions/64492572/regex-in-r-to-add-space-after-period-if-not-present
+        str_replace_all("\\.(?=[A-Za-z])", ". ") %>%
         
         ## Replace unknown species names coded using special characters or variations around unknown with NA
         ## Special characters are considered < "a" in R
@@ -144,7 +149,6 @@ species_clean <- function(.path){
   
   
   ## Output #################################################################
-  
   out_sp    <- sp_df %>% filter(!is.na(input_ready)) %>% pull(input_ready) %>% unique() %>% sort() 
   out_genus <- out_sp %>% word() %>% unique() %>% sort()
   
@@ -159,7 +163,7 @@ species_clean <- function(.path){
   
 } ## END FUNCTION
 
-## !!! For testing only
+## !!! For testing only 
 # check <- species_clean(.path = "data/NFMA_species_mess100.csv")
 # check
 
