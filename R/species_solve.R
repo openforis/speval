@@ -28,72 +28,178 @@
 # 8) GlobalTreeSearch [offline]. (Used to check names occur in this DB, not  actually to validate names)
 
 
-species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slices_threshold = 100, .withjobs = F){
+
+
+species_solve <- function(.path, .how_to, .save_table, .with_jobs = FALSE, 
+                          .multicore = TRUE, .slices_threshold = 100,
+                          .ref_lcvp = NULL, .ref_wfo = NULL, .ref_gts = NULL, 
+                          .gts = NULL, .src_tropicos = NULL) {
   
   ## !!! For testing only
-  #set.seed(11)
-  .vec <- species_clean(.path = "demo/NFMA_species_mess.csv") %>% 
-    filter(!is.na(input_ready)) %>% 
-    #slice_sample(n = 200) %>%
-    pull(input_ready) %>% 
-    unique()
-  .tree_global_search <- global_tree_search
-  .src_tropicos       <- src_tropicos
+  .path               <- "demo/NFMA_species_mess.csv"
+  .how_to             <- "comparative"
+  .save_table         <- path_res
+  .with_jobs          <- TRUE
+  .multicore          <- TRUE
   .slices_threshold   <- 100
-  .withjobs           <-  F
+  .ref_lcvp           <- paste0(path_data, "/", wfo_backbone_lcvp)
+  .ref_wfo            <- paste0(path_data, "/", wfo_file)
+  .ref_gts            <- "" ## TBD making WFO backbone from GTS
+  .gts                <- paste0(path_data, "/", gts_file)
+  .src_tropicos       <- src_tropicos
+  
+  
+  # .ref_name <- "Leipzig Catalogue of Vascular Plants"
+  # .multicore <-  TRUE
+  # 
   ## !!!
   
   time_start <- Sys.time()
   
   message("Initiating Taxonomic Resolution...")
   
-  
-  
-  ## Validation #############################################################
-  stopifnot(is.character(.vec))
-  
-  
-  ## Split species (innc. intraspecies) for genus alone #####################
-  species_init <- setdiff(.vec, word(.vec))   %>% unique() %>% sort()
-  genus_init   <- setdiff(.vec, species_init) %>% unique() %>% sort()
-  
-  #length(.vec) == length(species_input) + length(genus_input)
+  # write_file(x = "print(1+1)", file = "demo/test.R")
+  # rstudioapi::jobRunScript("demo/test.R", "test", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
   
   
   
-  ## Solve species excluding genus alone entries ############################
+  ## Check function inputs ##################################################
   
-  ## --- 1. Solve with LCVP -------------------------------------------------
-  ## --- Offline
-  ## --- Data source: LCVP::tab_lcvp
-  ## --- Algorithm: lcvplants::LCVP())
-  ## --- Performs better with full list than slices. Multi-cores integrated. max.distance = 2 recommended 
-  ## ---
-  ## --- https://idiv-biodiversity.github.io/lcvplants/articles/taxonomic_resolution_using_lcplants.html#running-lcvplants
+  stopifnot(is.character(.path))
+  stopifnot(str_ends(.path, "csv"))
+  
+  
+  
+  ## Initiation #############################################################
+  
+  filename <- get_filename(.path)
+  
+  species_cleaned <- species_clean(.path) %>%
+    filter(!is.na(input_ready)) %>% 
+    pull(input_ready) %>% 
+    unique()
+  
+  ## Split species (inc. intraspecies) for genus alone #####################
+  species_notsolved <- setdiff(species_cleaned, word(species_cleaned)) %>% unique() %>% sort()
+  genus_notsolved   <- setdiff(species_cleaned, species_notsolved) %>% unique() %>% sort()
+  
+  ## !!!For testing only
+  set.seed(12)
+  species_notsolved <- sample(species_notsolved, 50)
+  ## !!!
+  
+  ## Check
+  stopifnot(length(species_cleaned) == length(species_notsolved) + length(genus_notsolved))
+  
+  ## Create a temporary directory for saving function input for jobs
+  if(.with_jobs) dir.create("tmp", showWarnings = F)
+  
+  
+  
+  ## Implementation #########################################################
+  
+  ## ************************************************************************
+  ## --- 1. LCVP ------------------------------------------------------------
+  ## ************************************************************************
+  
+  if (.how_to %in% c("comparative", "sequential", "lcvp")) {
+    
+    ## Select data
+    ## --- Data is the same as first service
+    
+    ## Run service
+    if (.with_jobs) {
+      
+      ## Save function inputs 
+      save(species_notsolved, .save_table, file = paste0("tmp/lcvp_inputs.Rdata"))
+      
+      ## Make script
+      job_script <- paste0(
+        "source('global.R', local = T)\n",
+        "load(file = paste0('tmp/lcvp_inputs.Rdata'))\n",
+        ".path <- '", .path, "'\n",
+        "res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table)"
+      )
+      
+      ## Save script
+      write_file(job_script, file = paste0("tmp/lcvp_job.R"))
+      
+      ## Run script
+      rstudioapi::jobRunScript(paste0("tmp/lcvp_job.R"), name = "LCVP", workingDir = getwd(), exportEnv = "R_GlobalEnv")
+      
+      
+    } else {
+      
+      res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table)
+      
+    } ## End if Run service
+    
+    res_lcvp_notsolved <- res_lcvp %>% filter(status == "noref") %>% pull(submitted_name)
+    
+  } ## End if LCVP
+  
+  
+  ## ************************************************************************
+  ## --- 2. WFO on LCVP reference data --------------------------------------
+  ## ************************************************************************
+  if (.how_to %in% c("comparative", "sequential", "wfo_lcvp")) {
+    
+    ## Select data
+    if (.how_to == "sequential") species_notsolved <- setdiff(species_notsolved, res_lcvp_notsolved)
+  
+    ## Run service
+    if (.with_jobs) {
+      
+      ## Save function inputs
+      save(species_notsolved, .ref_lcvp, .multicore, .save_table, 
+           file = paste0("tmp/wfo_lcvp_inputs.Rdata"))
+      
+      ## Make script
+      job_script <- paste0(
+        "source('global.R', local = T)\n",
+        "load(file = paste0('tmp/wfo_lcvp_inputs.Rdata'))\n",
+        ".path <- '", .path, "'\n",
+        "solved_wfo_lcvp <- solve_wfo(
+        .taxon    = species_notsolved,
+        .ref_file = .ref_lcvp, 
+        .ref_name = 'Leipzig Catalogue of Vascular Plants',
+        .multicore = .multicore,
+        .save_table = .save_table
+        )"
+      )
+      
+      ## Save script
+      write_file(job_script, file = paste0("tmp/wfo_lcvp_script.R"))
+      
+      ## Run script
+      rstudioapi::jobRunScript(paste0("tmp/wfo_lcvp_script.R"), name = "WFO_LCVP", workingDir = getwd(), exportEnv = "R_GlobalEnv")
+      
+      
+    } else {
+      
+      solved_wfo_lcvp <- solve_wfo(
+        .taxon      = species_notsolved, 
+        .ref_file   = .ref_lcvp,
+        .ref_name   = "Leipzig Catalogue of Vascular Plants", 
+        .multicore  = .multicore, 
+        .save_table = .save_table
+        )
+      
+    } ## End if run service
+     
+    
+  } ## End if select data
+  
+  
+  
+  
+  
+  if(.with_jobs) unlink("tmp", showWarnings = F)
+  
+} ## End function species_solve()
 
-  ## Choosing data
-  input  <- species_init
-  
-  ## --- RUN LCVP ---
-  message("...Running Leipzig Catalogue of Vascular Plants.")
-  time1 <- Sys.time()
-  solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, synonyms = F)
-  time2 <- Sys.time()
-  dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
-  ## --- END RUN LCVP ---
-  
-  ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
-  write_csv(solved_lcvp, "demo/NFMA_job_lcvp_dist2.csv")
-  write_tsv(tibble(NULL), paste0("demo/NFMA_job_lcvp_dist2-", dt,"-secs.txt"))
-  
-  # ## !!! For testing only: run tnrs on a job instead of the console 
-  # rstudioapi::jobRunScript("R-jobs/solve_lcvp.R", "LCVP", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  # solved_lcvp <- read_csv("demo/NFMA_job_lcvp_dist2.csv", show_col_types = F)
-  # ## !!!
-  
-  
-  
+
+
   ## --- 1bis. Solve with LCVP data and WFO.match() algorythm ---------------
   ## --- Offline
   ## --- Data source: LCVP::tab_lcvp converted to WFO backbone
@@ -117,13 +223,14 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   input_chunks <-furrr:::make_chunks(n_x = length(input), n_workers = n_cores, chunk_size = 200)
   
   
-  ## --- RUN WFO ---
+  ## --- RUN WFO algo on LCVP data ---
   message("...Running WFO.match() on LCVP data.")
   
   time1 <- Sys.time()
   future::plan(multisession)
-  solved_lcvp_wfoalgo <- furrr::future_map_dfr(.x = input_chunks, .f = crt_wfo, .options = furrr::furrr_options(globals = FALSE))
-  future::plan(sequential, .cleanup = T)
+  solved_lcvp_wfoalgo <- furrr::future_map_dfr(.x = input_chunks, .f = crt_lcvp, .options = furrr::furrr_options(globals = FALSE))
+  future::plan(sequential)
+  #future::plan(sequential, .cleanup = T)
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Taxons solved with WFO", " - ", dt, " sec."))
@@ -192,64 +299,64 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   ## --- and also this guidance: http://viktoriawagner.weebly.com/blog/cleaning-species-names-with-r-ii-taxize
   
   
-  ## Choosing data and making slices
-  input           <- species_init
-  #set.seed(11)
-  #input           <- input[sample(seq_along(input), 250, replace = F)]
-  slices          <- c(0:trunc(length(input) / 200) * 200, length(input))
-  slices
-  
-  
-  ## --- RUN TROPICOS ---
-  message("...Running Tropicos.")
-  time1 <- Sys.time()
-  
-  ## Getting tropicos id for taxize::gnr_resolve() is not supplied
-  if(is.null(.src_tropicos)) {
-    .src_tropicos <- taxize::gnr_datasources() %>% 
-      filter(title == "Tropicos - Missouri Botanical Garden") %>% 
-      pull(id)
-  }
-  
-  ## !!! SLICING THE TABLE IS SLOWER BUT RESULTS IN MORE MATCHES
-  # genus_tropicos <- taxize::gnr_resolve(sci = input_genus, data_source_ids = .src_tropicos, with_canonical_ranks = T)
-  
-  ## Run Tropicos
-  # ## map_dfr() should have increased performance over for loops and output directly a data frame
-  # #input           <- species_notsolved
+  # ## Choosing data and making slices
   # input           <- species_init
-  # slices          <- c(0:trunc(length(input) / 100) * 100, length(input))
-  # solved_tropicos <- purrr::map_dfr(.x = seq_along(slices[-length(slices)]), .f = function(x){
+  # #set.seed(11)
+  # #input           <- input[sample(seq_along(input), 250, replace = F)]
+  # slices          <- c(0:trunc(length(input) / 200) * 200, length(input))
+  # slices
+  # 
+  # 
+  # ## --- RUN TROPICOS ---
+  # message("...Running Tropicos.")
+  # time1 <- Sys.time()
+  # 
+  # ## Getting tropicos id for taxize::gnr_resolve() is not supplied
+  # if(is.null(.src_tropicos)) {
+  #   .src_tropicos <- taxize::gnr_datasources() %>% 
+  #     filter(title == "Tropicos - Missouri Botanical Garden") %>% 
+  #     pull(id)
+  # }
+  # 
+  # ## !!! SLICING THE TABLE IS SLOWER BUT RESULTS IN MORE MATCHES
+  # # genus_tropicos <- taxize::gnr_resolve(sci = input_genus, data_source_ids = .src_tropicos, with_canonical_ranks = T)
+  # 
+  # ## Run Tropicos
+  # # ## map_dfr() should have increased performance over for loops and output directly a data frame
+  # # #input           <- species_notsolved
+  # # input           <- species_init
+  # # slices          <- c(0:trunc(length(input) / 100) * 100, length(input))
+  # # solved_tropicos <- purrr::map_dfr(.x = seq_along(slices[-length(slices)]), .f = function(x){
+  # #   
+  # #   message(paste0("Sequence: ", slices[x]+1, " to ", slices[x+1], "\n"))
+  # #   tmp_list <- input[slices[x]+1:slices[x+1]]
+  # #   taxize::gnr_resolve(sci = tmp_list, data_source_ids = src_tropicos, with_canonical_ranks = T)
+  # #   
+  # # }) ## End map_dfr()
+  # 
+  # ## Run with furrr - multicore version of purrr::map(), themselves tidyverse equivalent of apply()  
+  # future::plan(multisession)
+  # 
+  # solved_tropicos <- furrr::future_map_dfr(.x = seq_along(slices[-length(slices)]), .f = function(x){
   #   
   #   message(paste0("Sequence: ", slices[x]+1, " to ", slices[x+1], "\n"))
   #   tmp_list <- input[slices[x]+1:slices[x+1]]
-  #   taxize::gnr_resolve(sci = tmp_list, data_source_ids = src_tropicos, with_canonical_ranks = T)
+  #   taxize::gnr_resolve(sci = tmp_list, data_source_ids = .src_tropicos, with_canonical_ranks = T)
+  #   Sys.sleep(0.5)
   #   
   # }) ## End map_dfr()
-
-  ## Run with furrr - multicore version of purrr::map(), themselves tidyverse equivalent of apply()  
-  future::plan(multisession)
-  
-  solved_tropicos <- furrr::future_map_dfr(.x = seq_along(slices[-length(slices)]), .f = function(x){
-    
-    message(paste0("Sequence: ", slices[x]+1, " to ", slices[x+1], "\n"))
-    tmp_list <- input[slices[x]+1:slices[x+1]]
-    taxize::gnr_resolve(sci = tmp_list, data_source_ids = .src_tropicos, with_canonical_ranks = T)
-    Sys.sleep(0.5)
-    
-  }) ## End map_dfr()
-  
-  future::plan(sequential)
-  
-  time2 <- Sys.time()
-  dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with Tropicos", " - ", dt, " sec."))
-  ## --- END RUN TROPICOS ---
-  
-  ## !!! For testing only: run tnrs on a job instead of the console 
-  rstudioapi::jobRunScript("R-jobs/solve_tropicos.R", "TROPICOS", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  solved_tropicos <- read_csv("demo/NFMA_job_tropicos.csv", show_col_types = F)
-  ## !!!
+  # 
+  # future::plan(sequential)
+  # 
+  # time2 <- Sys.time()
+  # dt    <- round(as.numeric(time2-time1, units = "secs"))
+  # message(paste0("...Taxons solved with Tropicos", " - ", dt, " sec."))
+  # ## --- END RUN TROPICOS ---
+  # 
+  # ## !!! For testing only: run tnrs on a job instead of the console 
+  # rstudioapi::jobRunScript("R-jobs/solve_tropicos.R", "TROPICOS", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
+  # solved_tropicos <- read_csv("demo/NFMA_job_tropicos.csv", show_col_types = F)
+  # ## !!!
   
   
   ## Checks
@@ -334,10 +441,14 @@ species_solve <- function(.vec, .tree_global_search, .src_tropicos = NULL, .slic
   message(paste0("...Taxons solved with WFO", " - ", dt, " sec."))
   ## ---
   
+  ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
+  write_csv(solved_wfo, "demo/NFMA_job_wfo.csv")
+  write_tsv(tibble(NULL), paste0("demo/NFMA_job_wfo-", dt,"-secs.txt"))
+  
   
   ## !!! For testing only: run tnrs on a job instead of the console 
-  rstudioapi::jobRunScript("R-jobs/solve_wfo.R", "WFO", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
-  solved_wfo <- read_csv("demo/NFMA_job_wfo.csv", show_col_types = F)
+  # rstudioapi::jobRunScript("R-jobs/solve_wfo.R", "WFO", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
+  # solved_wfo <- read_csv("demo/NFMA_job_wfo.csv", show_col_types = F)
   ## !!!
   
   
