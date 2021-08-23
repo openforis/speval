@@ -65,8 +65,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   if (.multicore) {
     
     ## Set nb workers
-    n_cores <- ifelse(future::availableCores() <= 2, 1, future::availableCores() - 2)
-    
+    n_cores <- if_else(future::availableCores() <= 2, 1, future::availableCores() - 2)
     
     ## Create function to avoid loading the whole environment to the workers
     crt_wfo <- carrier::crate(
@@ -106,6 +105,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
     mutate(
       fuzzy_dist      = if_else(is.na(Fuzzy.dist), 0, Fuzzy.dist),
       fuzzy           = Fuzzy,
+      fuzzy_res       = if_else(Old.name == "", scientificName, Old.name),
       status          = if_else(taxonomicStatus == "", "noref", taxonomicStatus),
       accepted_id     = acceptedNameUsageID,
       refdata_id      = ref_filename,
@@ -119,10 +119,14 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
-    write_csv(solved_out, 
+    write_csv(solved_wfo, 
               paste0(.save_table, "/", filename, "-" , 
                      format(Sys.time(), format = "%Y-%m-%d-%H%M"), 
                      "-resWFO-with", ref_filename, ".csv"))
+    write_csv(solved_out, 
+              paste0(.save_table, "/", filename, "-" , 
+                     format(Sys.time(), format = "%Y-%m-%d-%H%M"), 
+                     "-resWFO-with", ref_filename, "-harmo.csv"))
     write_tsv(tibble(NULL), 
               paste0(.save_table, "/", filename, "-", 
                      format(Sys.time(), format = "%Y-%m-%d-%H%M"), 

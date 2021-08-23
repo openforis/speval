@@ -63,7 +63,12 @@ solve_lcvp <- function(.taxon, .infrasp_abb = c("subsp.", "ssp.", "var.", "subva
     left_join(solved_lcvp, by = c("submitted_name" = "Submitted_Name")) %>%
     mutate(
       fuzzy_dist    = Insertion + Deletion + Substitution,
-      fuzzy         = if_else( fuzzy_dist > 0, TRUE, FALSE),
+      fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
+      fuzzy_res     = if_else(
+        Infrasp == "species", 
+        paste(Genus, Species, sep = " "),
+        paste(Genus, Species, Infrasp, Infraspecies, sep = " ")
+        ),
       status        = if_else(Status == "", "noref", Status),
       accepted_id   = NA_character_,
       refdata_id    = "lcvp",
@@ -95,7 +100,8 @@ solve_lcvp <- function(.taxon, .infrasp_abb = c("subsp.", "ssp.", "var.", "subva
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
-    write_csv(solved_out, paste0(.save_table, "/", filename, "-" , format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP.csv"))
+    write_csv(solved_lcvp, paste0(.save_table, "/", filename, "-" , format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP.csv"))
+    write_csv(solved_out, paste0(.save_table, "/", filename, "-" , format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-harmo.csv"))
     write_tsv(tibble(NULL), paste0(.save_table, "/", filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-", dt,"-secs.txt"))
   }
   

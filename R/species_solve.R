@@ -134,14 +134,17 @@ species_solve <- function(.path, .how_to, .save_table, .with_jobs = FALSE,
       
     } ## End if Run service
     
+    print(table(res_lcvp$status, useNA = "always"))
     res_lcvp_notsolved <- res_lcvp %>% filter(status == "noref") %>% pull(submitted_name)
     
   } ## End if LCVP
   
   
+  
   ## ************************************************************************
   ## --- 2. WFO on LCVP reference data --------------------------------------
   ## ************************************************************************
+  
   if (.how_to %in% c("comparative", "sequential", "wfo_lcvp")) {
     
     ## Select data
@@ -187,6 +190,7 @@ species_solve <- function(.path, .how_to, .save_table, .with_jobs = FALSE,
       
     } ## End if run service
     
+    print(table(res_wfo_lcvp$status, useNA = "always"))
     res_wfo_lcvp_notsolved <- res_wfo_lcvp %>% filter(status == "noref") %>% pull(submitted_name) 
     
   } ## End if WFO on LCVP
