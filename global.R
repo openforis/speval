@@ -77,7 +77,7 @@ get_filename <- function(.path){
 ## Source functions
 source("R/species_clean.R", local = T)
 source("R/solve_lcvp.R", local = T)
-#source("R/solve_wfo.R", local = T)
+source("R/solve_wfo.R", local = T)
 #source("R/species_solve", local = T)
 
 

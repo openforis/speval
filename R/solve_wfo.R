@@ -69,7 +69,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   if (.multicore) {
     
     ## Set nb workers
-    nb_cores <- ifelse(future::availableCores() <= 2, 1, future::availableCores() - 2)
+    n_cores <- ifelse(future::availableCores() <= 2, 1, future::availableCores() - 2)
     
     
     ## Create function to avoid loading the whole environment to the workers

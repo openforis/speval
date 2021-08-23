@@ -188,7 +188,7 @@ species_solve <- function(.path, .how_to, .save_table, .with_jobs = FALSE,
     } ## End if run service
      
     
-  } ## End if select data
+  } ## End if WFO on LCVP
   
   
   
