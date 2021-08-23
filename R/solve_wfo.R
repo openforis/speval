@@ -53,10 +53,6 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   ## Remove genus alone from the data
   input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort()
   
-  ## !!! For testing only
-  set.seed(12)
-  input <- sample(input, 50) %>% sort()
-  
   ## Find table name if .path exists
   filename     <- if_else(exists(".path"), get_filename(.path), "")
   ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "WFO_backbone", get_filename(.ref_file))
