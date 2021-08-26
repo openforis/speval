@@ -129,7 +129,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table, .filename = filename)
     
     print(table(res_lcvp$status, useNA = "always"))
-    res_lcvp_notsolved <- res_lcvp %>% filter(status == "noref") %>% pull(submitted_name)
+    notsolved_lcvp <- res_lcvp %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -145,7 +145,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     message("Start WFO on LCVP reference data...")
     
     ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, res_lcvp_notsolved)
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
     
     ## Run service
     res_wfo_lcvp <- solve_wfo(
@@ -158,7 +158,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       )
     
     print(table(res_wfo_lcvp$status, useNA = "always"))
-    res_wfo_lcvp_notsolved <- res_wfo_lcvp %>% filter(status == "noref") %>% pull(submitted_name) 
+    notsolved_wfo_lcvp <- res_wfo_lcvp %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -174,7 +174,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     message("Start WFO...")
     
     ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, res_wfo_lcvp_notsolved)
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo_lcvp)
     
     ## Run service
     res_wfo <- solve_wfo(
@@ -186,8 +186,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .filename   = filename
       )
     
-    print(table(res_wfo_lcvp$status, useNA = "always"))
-    res_wfo_lcvp_notsolved <- res_wfo_lcvp %>% filter(status == "noref") %>% pull(submitted_name) 
+    print(table(res_wfo$status, useNA = "always"))
+    notsolved_wfo <- res_wfo %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -203,7 +203,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     message("Start Tropicos...")
     
     ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, res_wfo_lcvp_notsolved)
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo)
     
     ## Run service
     res_tropicos <- solve_tropicos(
@@ -214,14 +214,22 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     )
     
     print(table(res_tropicos$status, useNA = "always"))
-    res_tropicos_notsolved <- res_tropicos %>% filter(status == "noref") %>% pull(submitted_name) 
+    notsolved_tropicos <- res_tropicos %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
 
+  } else {
+    
+    res_tropicos <- NULL
+    
   } ## End if WFO
   
   
   
   
   ## Analysis results #######################################################
+  
+  out_tab <- mget(ls(pattern = "res_")) %>% bind_rows()
+  
+  
   
   
   
