@@ -129,7 +129,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table, .filename = filename)
     
     print(table(res_lcvp$status, useNA = "always"))
-    notsolved_lcvp <- res_lcvp %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_lcvp <- res_lcvp$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -158,7 +158,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       )
     
     print(table(res_wfo_lcvp$status, useNA = "always"))
-    notsolved_wfo_lcvp <- res_wfo_lcvp %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_wfo_lcvp <- res_wfo_lcvp$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -187,7 +187,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       )
     
     print(table(res_wfo$status, useNA = "always"))
-    notsolved_wfo <- res_wfo %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_wfo <- res_wfo$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -214,7 +214,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     )
     
     print(table(res_tropicos$status, useNA = "always"))
-    notsolved_tropicos <- res_tropicos %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_tropicos <- res_tropicos$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
 
   } else {
     
@@ -227,17 +227,20 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   ## Analysis results #######################################################
   
-  out_tab <- mget(ls(pattern = "res_")) %>% bind_rows()
+  tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
+  dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2)
   
-  
-  
+  stat1 <- tab %>%
+    group_by(refdata, status) %>%
+    summarize(count = n()) %>%
+    pivot_wider(names_from = status, values_from = count) %>%
+    mutate(duration = dt)
+    
   
   
   ## Output #################################################################
   
-  out <- mget(ls(pattern = "res_"))
-  out
-  
+  list(tab = tab, time = time , stat1 = stat1)
   
 } ## End function species_solve()
 

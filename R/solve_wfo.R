@@ -131,7 +131,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
                      "-resWFO-with", ref_filename, "-", dt,"-secs.txt"))
   }
   
-  solved_out
+  list(res = solved_out, dt = dt)
     
 }
 

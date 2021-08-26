@@ -107,7 +107,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
     write_tsv(tibble(NULL), paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-", dt,"-secs.txt"))
   }
   
-  solved_out
+  out <- list(res = solved_out, dt = dt)
     
 }
 
