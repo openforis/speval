@@ -7,7 +7,6 @@
 
 ## Libs #####################################################################
 
-#source("R/libs.R", local = T)
 ## Shiny
 library(shiny)
 library(shinyjs)   # for hiding/showing objects
@@ -40,48 +39,23 @@ library(tidyverse)
 
 
 
-## Functions ################################################################
+## Source functions #########################################################
 
-# ## SUPERSEEDED: multicore setup replaced with future::plan(multiprocess), compatible with all OS 
-# # get operating system info
-# # https://www.r-bloggers.com/identifying-the-os-from-r/
-# get_os <- function(){
-#   sysinf <- Sys.info()
-#   if (!is.null(sysinf)){
-#     os <- sysinf['sysname']
-#     if (os == 'Darwin')
-#       os <- "osx"
-#   } else { ## mystery machine
-#     os <- .Platform$OS.type
-#     if (grepl("^darwin", R.version$os))
-#       os <- "osx"
-#     if (grepl("linux-gnu", R.version$os))
-#       os <- "linux"
-#   }
-#   tolower(os)
-# }
+source("R/other_functions.R", local = T)
 
-
-# Create MODE function (https://www.tutorialspoint.com/r/r_mean_median_mode.htm)
-getmode <- function(v) {
-  uniqv <- unique(v)
-  uniqv[which.max(tabulate(match(v, uniqv)))]
-}
-
-# get filename from path
-get_filename <- function(.path){
-  filename <- .path %>% str_remove("\\..*") %>% str_remove(".*/")
-}
-
-
-## Source functions
 source("R/species_clean.R", local = T)
+
 source("R/solve_lcvp.R", local = T)
+
 source("R/solve_wfo.R", local = T)
-#source("R/species_solve", local = T)
+
+source("R/solve_tropicos.R", local = T)
+
+source("R/species_solve.R", local = T)
 
 
-## Paths ####################################################################
+
+## Create paths plus directories to data and results ########################
 
 path_data <- "data"
 dir.create(path_data, showWarnings = F)
@@ -99,9 +73,9 @@ dir.create(path_res, showWarnings = F)
 
 ## --- 1. Global Tree Seach ------------------------------------------------- 
 ## Get Global Tree Search File from internet if not already downloaded
-gts_file <- "global_tree_search_trees_1_5.csv"
+gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
 
-if (!(gts_file %in% list.files("data"))) {
+if (!(gts_file %in% list.files(recursive = T))) {
   
   time1 <- Sys.time()
   
@@ -121,9 +95,9 @@ if (!(gts_file %in% list.files("data"))) {
 
 ## --- 2. World Flora Online ------------------------------------------------
 ## Get World Flora Online backbone dataset
-wfo_file  <- "classification.txt"
+wfo_file  <- file.path(path_data, "classification.txt")
 
-if (!(wfo_file %in% list.files(path_data))) {
+if (!(wfo_file %in% list.files(recursive = T))) {
   
   message("Downloading World Flora Online backbone dataset...")
   
@@ -150,9 +124,9 @@ if (!(wfo_file %in% list.files(path_data))) {
 
 
 ## --- 3. Make a WFO backbone from LCVP -------------------------------------
-wfo_backbone_lcvp <- "LCVP_conv.txt"
+wfo_backbone_lcvp <- file.path(path_data, "LCVP_conv.txt")
 
-if (!(wfo_backbone_lcvp %in% list.files(path_data))) {
+if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   
   message("Creating WFO backbone dataset from LCVP::tab_lcvp...")
   
@@ -238,38 +212,12 @@ src_tropicos <- taxize::gnr_datasources() %>%
   filter(title == "Tropicos - Missouri Botanical Garden") %>%
   pull(id)
 
-
-
-
 # ## SUPERSEEDED: multicore setup replaced with future::plan(multiprocess), compatible with all OS  
 # ## Add parallel computing library for Linux systems
 # # os = "linux"
 # os = get_os()
 # if (os == "linux") library('doMC')
 
-
-
-# ## Load data ################################################################
-# 
-# ## Global Tree Search
-# global_tree_search <- read_csv(paste0(path_data, "/", gts_file), show_col_types = F) %>% select(TaxonName, Author)
-# 
-# 
-# ## World Flora Online 
-# ## Load WFO classification with readr::read_tsv directly from zip file and much faster than fread
-# ## However classification.txt contains errors, requires data.table::fread()
-# # wfo_data <- read_tsv(
-# #   file = unz(description = paste0(wfo_path, "/", wfo_file), filename = wfo_classification), 
-# #   col_types = cols(.default = col_character()), 
-# #   )
-# # data_wfo <- data.table::fread(paste0(wfo_path, "/", wfo_class), encoding="UTF-8")
-# # 
-# # head(data_wfo)
-# 
-# 
-# ## Create backbone for WorldFlora::WFO.match() 
-# ## based on LCVP::tab_lcvp from Leipzig Catalogue of Vascular Plants
-# head(LCVP::tab_lcvp)
 
 
 

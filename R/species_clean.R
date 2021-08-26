@@ -1,6 +1,4 @@
 
-
-
 ## Function to clean most common typos and entry errors on tree species taxonomic names
 ## Input file path to a species table with scientific_name and optionally code
 ## Output a data frame containing the input names uncleaned and cleaned:
