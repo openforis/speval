@@ -72,14 +72,13 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   message(paste0("...Taxons solved with Tropicos", " - ", dt, " sec."))
   ## --- END RUN LCVP ---
   
-  # table(solved_lcvp$Status, useNA = "always")
-  
-  
   ## --- Harmonize ---
   solved_out <- tibble(name = .taxon) %>%
     left_join(solved_tropicos, by = c("name" = "user_supplied_name")) %>%
+    rowwise() %>%
+    mutate(fuzzy_dist = as.numeric(utils::adist(name, matched_name2, ignore.case = T))) %>%
+    ungroup() %>%
     mutate(
-      fuzzy_dist    = utils::adist(name, matched_name2),
       fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
       #fuzzy_res     = NA,
       status        = case_when(
@@ -93,7 +92,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
       accepted_id   = NA_character_,
       refdata_id    = "Tropicos",
       refdata       = "Tropicos - Missouri Botanical Garden",
-      matching_algo = "lcvplants::LCVP()",
+      matching_algo = "taxize::gnr_resolve()",
       accepted_name = matched_name2,
       accepted_author = NA_character_
     ) %>%
