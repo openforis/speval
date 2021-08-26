@@ -9,17 +9,17 @@
 source("global.R")
 
 ## tests
-lcvplants::LCVP("Ziziphus", synonyms = F, genus_search = T, max.distance = 2, infra_specific = T)
-WorldFlora::WFO.match("Ziziphus", WFO.file = wfo_file, Fuzzy = 2)
-WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
-WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, Fuzzy.max = 300)
-WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_file, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
-
-df <- tibble(sp_name = "Zizyphus", genus = "Zizyphus", sp = "")
-WorldFlora::WFO.match(df, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, Fuzzy = 2,  First.dist = TRUE, Fuzzy.one = T)
-
-df2 <- tibble(sp_name = "Zizyphus cinnamomum", genus = "Zizyphus", sp = "cinnamomum")
-WorldFlora::WFO.match(df2, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
+# lcvplants::LCVP("Ziziphus", synonyms = F, genus_search = T, max.distance = 2, infra_specific = T)
+# WorldFlora::WFO.match("Ziziphus", WFO.file = wfo_file, Fuzzy = 2)
+# WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
+# WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, Fuzzy.max = 300)
+# WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_file, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
+# 
+# df <- tibble(sp_name = "Zizyphus", genus = "Zizyphus", sp = "")
+# WorldFlora::WFO.match(df, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, Fuzzy = 2,  First.dist = TRUE, Fuzzy.one = T)
+# 
+# df2 <- tibble(sp_name = "Zizyphus cinnamomum", genus = "Zizyphus", sp = "cinnamomum")
+# WorldFlora::WFO.match(df2, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
 
 
 
@@ -46,7 +46,7 @@ job_script <- paste0(
   "source('global.R', local = T)\n",
   "res_species <- species_solve(
   .path       = '", iFile, "', 
-  .how_to     = 'tropicos', 
+  .how_to     = 'compare', 
   .save_table = path_res, 
   .multicore  = T, 
   .ref_lcvp   = wfo_backbone_lcvp, 
