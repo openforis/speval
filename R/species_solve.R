@@ -92,6 +92,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   ## Get nnumber of cores for multicores subfunctions
   n_cores <- parallel::detectCores() - 1
+  #n_cores <- if_else(n_cores == 0, 1, n_cores)
   n_cores <- if_else(n_cores == 0, 1, ceiling(n_cores * 2 / 3))
   
   filename <- get_filename(.path)
@@ -142,9 +143,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     
   } else {
     
-    res_lcvp <- NULL
+    res_lcvp <- list(tab = NULL, dt = NULL)
     
-  }## End if LCVP
+  } ## End if LCVP
   
   
   
@@ -172,7 +173,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     
   } else {
     
-    res_wfo_lcvp <- NULL
+    res_wfo_lcvp <- list(tab = NULL, dt = NULL)
     
   } ## End if WFO on LCVP
   
@@ -202,7 +203,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     
   } else {
     
-    res_wfo <- NULL
+    res_wfo <- list(tab = NULL, dt = NULL)
     
   } ## End if WFO
   
@@ -229,19 +230,20 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
 
   } else {
     
-    res_tropicos <- NULL
+    res_tropicos <- list(tab = NULL, dt = NULL)
     
   } ## End if WFO
   
   
+  
   ## Analysis results #######################################################
   
-  ## For debugging analysis
-  # res_1 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0827-resTropicos-harmo.csv"), dt = 1000)
-  # res_2 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0252-resLCVP-harmo.csv"), dt = 100)
+  ## !!! For debugging analysis
+  # res_2 <- res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-27-1417-resLCVP-harmo.csv"), dt = 1000)
+  # res_2$tab$refdata <- "a"
   
   tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
-  dt  <- mget(ls(pattern = "res_")) %>% map_dbl(., 2)
+  dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2) %>% as.numeric()
   
   stat1 <- tab %>%
     group_by(refdata, status) %>%

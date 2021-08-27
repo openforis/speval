@@ -11,7 +11,7 @@
 ## ---              or any dataset converted with WorldFlora::new.backbone()
 ## --- Algorithm: WFO.match()
 ## --- Performs better with parallel computing
-## --- WFO.match() recommended parameters: Fuzzy = 2, Fuzzy.max = Inf
+## --- WFO.match() recommended parameters: Fuzzy = 2 to compare with LCVP(), ## needed params for genus only: First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf
 ## ---
 ## --- http://www.worldfloraonline.org/
 ## --- https://github.com/cran/WorldFlora
@@ -28,12 +28,26 @@
 
 solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_table = NULL, .filename = "", .n_cores = 1) {
   
+  ## !!! For debbugging only
+  # .taxon <- species_clean(.path = iFile) %>%
+  #   filter(!is.na(input_ready)) %>% 
+  #   pull(input_ready) %>% 
+  #   unique()
+  # .ref_file   = wfo_backbone_lcvp
+  # .ref_name   = "Leipzig Catalogue of Vascular Plants"
+  # .multicore  = T
+  # .save_table = path_res
+  # .filename   = get_filename(.path = iFile)
+  # .n_cores    = parallel::detectCores() - 1
+  ## !!!
+  
+  
   ## Check function inputs
   stopifnot(is.character(.taxon))
 
   ## Remove genus alone from the data
-  #input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort() ## WFO.match can handle genus alone with increased Fuzzy.max
-  input <- .taxon
+  input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort() ## WFO.match can handle genus alone with increased Fuzzy.max
+  #input <- .taxon
   
   ## Find table name if .path exists
   ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "WFO_backbone", get_filename(.ref_file))
@@ -51,14 +65,14 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       function(.x){
         message("Processing sequence: ", min(.x), " to ", max(.x), ".")
         wfo_input = input[.x]
-        WorldFlora::WFO.match(wfo_input, WFO.file = .ref_file, Fuzzy = 2, Fuzzy.max = Inf, verbose = F)
+        WorldFlora::WFO.match(wfo_input, WFO.file = .ref_file, Fuzzy = 2, verbose = F)
       })
     
     ## Make chunks
     input_chunks <-furrr:::make_chunks(n_x = length(input), n_workers = .n_cores)
     
     ## Run crated function 
-    future::plan(multisession)
+    future::plan(multisession, workers = .n_cores)
     solved_wfo <- furrr::future_map_dfr(.x = input_chunks, .f = crt_wfo, .options = furrr::furrr_options(globals = FALSE))
     future::plan(sequential)
   

@@ -15,6 +15,8 @@ source("global.R")
 # WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
 # WorldFlora::WFO.match("Zizyphus", WFO.file = wfo_file, Fuzzy.max = 300)
 # WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_file, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
+# WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_backbone_lcvp, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
+
 # 
 # df <- tibble(sp_name = "Zizyphus", genus = "Zizyphus", sp = "")
 # WorldFlora::WFO.match(df, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, Fuzzy = 2,  First.dist = TRUE, Fuzzy.one = T)
