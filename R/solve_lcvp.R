@@ -71,7 +71,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
       #   paste(Genus, Species, sep = " "),
       #   paste(Genus, Species, Infrasp, Infraspecies, sep = " ")
       #   ),
-      status        = if_else(Status == "", "noref", Status),
+      status        = if_else(Status == "" | is.na(Status), "noref", Status),
       accepted_id   = NA_character_,
       refdata_id    = "lcvp",
       refdata       = "Leipzig Catalogue of Vascular Plants",
@@ -107,6 +107,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
     write_tsv(tibble(NULL), paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-", dt,"-secs.txt"))
   }
   
+  ## Output
   out <- list(res = solved_out, dt = dt)
     
 }

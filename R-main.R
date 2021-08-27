@@ -25,7 +25,9 @@ source("global.R")
 
 ## Run function
 
-iFile <- "demo/NFMA_species_mess.csv"
+iFile  <- "demo/NFMA_species_mess.csv"
+how_to <- "wfo_lcvp"
+
 
 # ## Run species identification in console
 # res_species <- species_solve(
@@ -46,7 +48,7 @@ job_script <- paste0(
   "source('global.R', local = T)\n",
   "res_species <- species_solve(
   .path       = '", iFile, "', 
-  .how_to     = 'compare', 
+  .how_to     = '", how_to, "', 
   .save_table = path_res, 
   .multicore  = T, 
   .ref_lcvp   = wfo_backbone_lcvp, 

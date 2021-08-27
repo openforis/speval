@@ -104,7 +104,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       fuzzy_dist      = if_else(is.na(Fuzzy.dist), 0, Fuzzy.dist),
       fuzzy           = Fuzzy,
       #fuzzy_res       = NA,
-      status          = if_else(taxonomicStatus == "", "noref", taxonomicStatus),
+      status          = if_else(taxonomicStatus == "" | is.na(taxonomicStatus), "noref", taxonomicStatus),
       accepted_id     = acceptedNameUsageID,
       refdata_id      = ref_filename,
       refdata         = .ref_name,
@@ -131,6 +131,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
                      "-resWFO-with", ref_filename, "-", dt,"-secs.txt"))
   }
   
+  ## Output
   list(res = solved_out, dt = dt)
     
 }

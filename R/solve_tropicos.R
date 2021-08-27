@@ -106,6 +106,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
     write_tsv(tibble(NULL)   , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resTropicos-", dt,"-secs.txt"))
   }
   
+  ## Output
   list(res = solved_out, dt = dt)
   
 }

@@ -223,18 +223,20 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   } ## End if WFO
   
   
+  res_1 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0827-resTropicos-harmo.csv"), dt = 1000)
+  res_2 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0252-resLCVP-harmo.csv"), dt = 100)
   
   
   ## Analysis results #######################################################
   
   tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
-  dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2)
+  dt  <- mget(ls(pattern = "res_")) %>% map_dbl(., 2)
   
   stat1 <- tab %>%
     group_by(refdata, status) %>%
     summarize(count = n()) %>%
-    pivot_wider(names_from = status, values_from = count) %>%
-    mutate(duration = dt)
+    pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
+    add_column(duration = dt)
     
   
   
