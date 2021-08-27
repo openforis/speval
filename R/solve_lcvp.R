@@ -20,25 +20,15 @@
 ## ---    .save_table: NULL or path to export the results. if .path exists (function embedded 
 ## ---                 in a higher level function call) it is used in the file name 
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
-solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
-  
-  # ## !!! For testing only
-  # .path    <- "demo/NFMA_species_mess.csv"
-  # .taxon <- .path %>% species_clean() %>%
-  #   filter(!is.na(input_ready)) %>% 
-  #   pull(input_ready) %>% 
-  #   unique()
-  # .save_table <- path_res
-  # .filename < - get_filename(.path)
-  # ## !!! 
+## ---    .n_cores   : the number of cores to be used for parallel computing
+
+solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) {
   
   ## Vector of infraspecies abbreviations
   infrasp_abb <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
   
   ## Check function inputs
-  stopifnot("LCVP" %in% installed.packages())
-  stopifnot("lcvplants" %in% installed.packages())
-  if (!is.null(.save_table)) stopifnot(dir.exists(.save_table))
+  stopifnot(is.character(.taxon))
   
   ## Remove genus alone if in the data
   input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort()
@@ -47,7 +37,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
   message("...Running Leipzig Catalogue of Vascular Plants.")
   time1 <- Sys.time()
   
-  solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, genus_search = T, synonyms = F)
+  solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, genus_search = T, synonyms = F, max.cores = .n_cores)
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))

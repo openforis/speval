@@ -24,31 +24,13 @@
 ## ---    .save_table: NULL or path to export the results. if .path exists (function embedded 
 ## ---                 in a higher level function call) it is used in the file name.
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
+## ---    .n_cores   : the number of cores to be used for parallel computing
 
-solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_table = NULL, .filename = ""){
-  
-  ## !!! For testing only
-  # .path    <- "demo/NFMA_species_mess.csv"
-  # .taxon <- .path %>% species_clean() %>%
-  #   filter(!is.na(input_ready)) %>%
-  #   pull(input_ready) %>%
-  #   unique()
-  # .ref_file <- paste0(path_data, "/", wfo_backbone_lcvp)
-  # .ref_name <- "Leipzig Catalogue of Vascular Plants"
-  # .multicore <-  TRUE
-  # .save_table <- path_res
-  # .filename < - get_filename(.path)
-  ## !!! 
+solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_table = NULL, .filename = "", .n_cores = 1) {
   
   ## Check function inputs
-  stopifnot(is.logical(.multicore))
   stopifnot(is.character(.taxon))
-  stopifnot(is.character(.ref_file))
-  stopifnot(file.exists(.ref_file))
-  stopifnot(is.character(.ref_name))
-  stopifnot(is.null(.save_table)|is.character(.save_table))
-  if (!is.null(.save_table)) stopifnot(dir.exists(.save_table))
-  
+
   ## Remove genus alone from the data
   #input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort() ## WFO.match can handle genus alone with increased Fuzzy.max
   input <- .taxon
@@ -62,9 +44,6 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   
   if (.multicore) {
     
-    ## Set nb workers
-    n_cores <- if_else(future::availableCores() <= 2, 1, future::availableCores() - 2)
-    
     ## Create function to avoid loading the whole environment to the workers
     crt_wfo <- carrier::crate(
       input     = input,
@@ -76,7 +55,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       })
     
     ## Make chunks
-    input_chunks <-furrr:::make_chunks(n_x = length(input), n_workers = n_cores)
+    input_chunks <-furrr:::make_chunks(n_x = length(input), n_workers = .n_cores)
     
     ## Run crated function 
     future::plan(multisession)

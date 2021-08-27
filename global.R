@@ -29,8 +29,7 @@ library(WorldFlora)
 
 ## Data analysis
 library(data.table) ## For WorldFlora.
-library(furrr)
-#> requires: future, parallel
+library(furrr) #> requires: future, parallel
 library(carrier) ## Crate functions and their dependencies tables to avoid loading the whole .GlobalEnv in parallel computation workers
 library(tidyverse)
 

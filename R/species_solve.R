@@ -72,7 +72,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   stopifnot(is.logical(.multicore))
   
   ## Check if packages installed (https://stackoverflow.com/questions/9341635/check-for-installed-packages-before-running-install-packages)
-  if (.multicore) stopifnot(nzchar(system.file(package = "furrr"))) ## future and parallel are loaded from furrr
+  stopifnot(nzchar(system.file(package = "furrr"))) ## future and parallel are loaded from furrr
   if (.how_to %in% c("compare", "integrate", "lcvp"))     stopifnot(nzchar(system.file(package = "lcvplants")))
   if (.how_to %in% c("compare", "integrate", "wfo_lcvp")) stopifnot(nzchar(system.file(package = "WorldFlora")))
   if (.how_to %in% c("compare", "integrate", "wfo"))      stopifnot(nzchar(system.file(package = "WorldFlora")))
@@ -89,6 +89,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   ## Initiation #############################################################
+  
+  ## Get nnumber of cores for multicores subfunctions
+  n_cores <- parallel::detectCores() - 1
+  n_cores <- if_else(n_cores == 0, 1, ceiling(n_cores * 2 / 3))
   
   filename <- get_filename(.path)
   
@@ -126,7 +130,12 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     ## --- Data is the same as first service
     
     ## Run service
-    res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table, .filename = filename)
+    res_lcvp <- solve_lcvp(
+      .taxon      = species_notsolved, 
+      .save_table = .save_table, 
+      .filename   = filename, 
+      .n_cores    = n_cores
+      )
     
     print(table(res_lcvp$tab$status, useNA = "always"))
     notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
@@ -154,7 +163,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .ref_name   = "Leipzig Catalogue of Vascular Plants", 
       .multicore  = .multicore, 
       .save_table = .save_table,
-      .filename   = filename
+      .filename   = filename,
+      .n_cores    = n_cores
       )
     
     print(table(res_wfo_lcvp$tab$status, useNA = "always"))
@@ -183,7 +193,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .ref_name   = "World Flora Online", 
       .multicore  = .multicore, 
       .save_table = .save_table,
-      .filename   = filename
+      .filename   = filename,
+      .n_cores    = n_cores
       )
     
     print(table(res_wfo$tab$status, useNA = "always"))
