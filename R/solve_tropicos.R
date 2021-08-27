@@ -107,7 +107,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   }
   
   ## Output
-  list(res = solved_out, dt = dt)
+  list(tab = solved_out, dt = dt)
   
 }
 

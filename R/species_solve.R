@@ -128,8 +128,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     ## Run service
     res_lcvp <- solve_lcvp(.taxon = species_notsolved, .save_table = .save_table, .filename = filename)
     
-    print(table(res_lcvp$status, useNA = "always"))
-    notsolved_lcvp <- res_lcvp$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    print(table(res_lcvp$tab$status, useNA = "always"))
+    notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -157,8 +157,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .filename   = filename
       )
     
-    print(table(res_wfo_lcvp$status, useNA = "always"))
-    notsolved_wfo_lcvp <- res_wfo_lcvp$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    print(table(res_wfo_lcvp$tab$status, useNA = "always"))
+    notsolved_wfo_lcvp <- res_wfo_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -186,8 +186,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .filename   = filename
       )
     
-    print(table(res_wfo$status, useNA = "always"))
-    notsolved_wfo <- res_wfo$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    print(table(res_wfo$tab$status, useNA = "always"))
+    notsolved_wfo <- res_wfo$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
   } else {
     
@@ -213,8 +213,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       .filename   = filename
     )
     
-    print(table(res_tropicos$status, useNA = "always"))
-    notsolved_tropicos <- res_tropicos$res %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    print(table(res_tropicos$tab$status, useNA = "always"))
+    notsolved_tropicos <- res_tropicos$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
 
   } else {
     
@@ -223,11 +223,11 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   } ## End if WFO
   
   
-  res_1 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0827-resTropicos-harmo.csv"), dt = 1000)
-  res_2 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0252-resLCVP-harmo.csv"), dt = 100)
-  
-  
   ## Analysis results #######################################################
+  
+  ## For debugging analysis
+  # res_1 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0827-resTropicos-harmo.csv"), dt = 1000)
+  # res_2 <- list(res = read_csv("results/NFMA_species_mess-2021-08-27-0252-resLCVP-harmo.csv"), dt = 100)
   
   tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
   dt  <- mget(ls(pattern = "res_")) %>% map_dbl(., 2)

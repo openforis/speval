@@ -108,7 +108,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "") {
   }
   
   ## Output
-  out <- list(res = solved_out, dt = dt)
+  out <- list(tab = solved_out, dt = dt)
     
 }
 

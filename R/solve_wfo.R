@@ -132,7 +132,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   }
   
   ## Output
-  list(res = solved_out, dt = dt)
+  list(tab = solved_out, dt = dt)
     
 }
 
