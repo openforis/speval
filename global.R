@@ -138,6 +138,13 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## 2. scientific name separated from author
   ## 3. replace accepted name for synonyms with ID
   
+  ## Check missing Output.Taxon in Input.Taxon
+  lcvp_out <- LCVP::tab_lcvp %>% pull(Output.Taxon) %>% unique() %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)")
+  
+  check_lcvp <- LCVP::tab_lcvp$Input.Taxon[is.na(match(lcvp_out, LCVP::tab_lcvp$Input.Taxon))]
+  
+  
+    
   ## Address 1. and 2.
   data_lcvp1 <- LCVP::tab_lcvp %>%
     as_tibble() %>%

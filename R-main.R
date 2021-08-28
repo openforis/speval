@@ -24,10 +24,27 @@ source("global.R")
 # df2 <- tibble(sp_name = "Zizyphus cinnamomum", genus = "Zizyphus", sp = "cinnamomum")
 # WorldFlora::WFO.match(df2, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
 
-
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acer syriacum"))
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acer obtusifolium"))
+# 
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(Output.Taxon == "")
+# 
+# lcvp_tab <- LCVP::tab_lcvp
+# lcvp_out <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique() ## 406331 accepted names
+# lcvp_in  <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique() ## 1315503 
+# 
+# lcvp_check <- lcvp_out[is.na(match(lcvp_out, lcvp_in))] %>% sort()
+# 
+# lcvp_check[2]
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Output.Taxon, lcvp_check[2]))
+# 
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, lcvp_check[1]))
+# 
+# tt <- LCVP::tab_lcvp %>% as_tibble() %>% filter(Output.Taxon %in% lcvp_check)
+# 
+# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Senegalia furcatispina"))
 
 ## Run function
-
 iFile  <- "demo/NFMA_species_mess.csv"
 how_to <- "compare"
 

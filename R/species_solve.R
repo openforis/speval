@@ -239,8 +239,8 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   ## Analysis results #######################################################
   
   ## !!! For debugging analysis
-  # res_2 <- res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-27-1417-resLCVP-harmo.csv"), dt = 1000)
-  # res_2$tab$refdata <- "a"
+  res_2 <- res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-28-1109-resLCVP-harmo.csv"), dt = 1000)
+  res_2$tab$refdata <- "a"
   
   tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
   dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2) %>% as.numeric()
@@ -256,7 +256,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   ## Output #################################################################
   
   out <- list(tab = tab, time = time , stat1 = stat1)
-  save(out, file.path(.save_table, paste0(.filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), ".Rdata")))
+  save(out, file = file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), ".Rdata")))
   
   out
   

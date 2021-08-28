@@ -62,6 +62,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
       #   paste(Genus, Species, Infrasp, Infraspecies, sep = " ")
       #   ),
       status        = if_else(Status == "" | is.na(Status), "noref", Status),
+      score         = Score,
       accepted_id   = NA_character_,
       refdata_id    = "lcvp",
       refdata       = "Leipzig Catalogue of Vascular Plants",
@@ -87,7 +88,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
         paste(infrasp, infrasp_name, leftover, sep = " ")
       )
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   
