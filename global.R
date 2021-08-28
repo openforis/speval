@@ -139,11 +139,13 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## 3. replace accepted name for synonyms with ID
   
   ## Check missing Output.Taxon in Input.Taxon
-  lcvp_out <- LCVP::tab_lcvp %>% pull(Output.Taxon) %>% unique() %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)")
+  lcvp_tab <- LCVP::tab_lcvp
+  lcvp_out <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique() ## 406331 accepted names
+  lcvp_in  <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique() ## 1315503
+
+  lcvp_check <- lcvp_out[is.na(match(lcvp_out, lcvp_in))] %>% sort()
   
-  check_lcvp <- LCVP::tab_lcvp$Input.Taxon[is.na(match(lcvp_out, LCVP::tab_lcvp$Input.Taxon))]
-  
-  
+  tt <- tibble(sp = lcvp_check)
     
   ## Address 1. and 2.
   data_lcvp1 <- LCVP::tab_lcvp %>%
