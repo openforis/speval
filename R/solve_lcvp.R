@@ -87,7 +87,8 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
         paste(infrasp, infrasp_name, leftover, sep = " ")
       )
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo)
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    distinct()
   ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file

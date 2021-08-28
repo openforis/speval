@@ -105,7 +105,8 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       accepted_name   = scientificName,
       accepted_author = scientificNameAuthorship,
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo)
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    distinct()
   ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file

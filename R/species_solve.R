@@ -246,7 +246,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2) %>% as.numeric()
   
   stat1 <- tab %>%
-    group_by(refdata, status) %>%
+    group_by(refdata_id,	refdata,	matching_algo, status) %>%
     summarize(count = n()) %>%
     pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
     add_column(duration = dt)
@@ -255,7 +255,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   ## Output #################################################################
   
-  list(tab = tab, time = time , stat1 = stat1)
+  out <- list(tab = tab, time = time , stat1 = stat1)
+  save(out, file.path(.save_table, paste0(.filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), ".Rdata")))
+  
+  out
   
 } ## End function species_solve()
 

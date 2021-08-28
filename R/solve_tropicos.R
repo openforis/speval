@@ -96,7 +96,8 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
       accepted_name = matched_name2,
       accepted_author = NA_character_
     ) %>%
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo)
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    distinct()
   ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
