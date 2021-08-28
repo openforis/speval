@@ -139,6 +139,8 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## 3. replace accepted name for synonyms with ID
   
   ## Check missing Output.Taxon in Input.Taxon
+  ## Need to remove unresolved and external status then check for incomplete genus name and missing author name. 
+  ## Keep only taxa with author name to be conservative.
   lcvp_tab <- LCVP::tab_lcvp
   lcvp_out <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique() ## 406331 accepted names
   lcvp_in  <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique() ## 1315503
