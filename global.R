@@ -141,16 +141,46 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## Check missing Output.Taxon in Input.Taxon
   ## Need to remove unresolved and external status then check for incomplete genus name and missing author name. 
   ## Keep only taxa with author name to be conservative.
-  lcvp_tab <- LCVP::tab_lcvp
-  lcvp_out <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique() ## 406331 accepted names
-  lcvp_in  <- lcvp_tab %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique() ## 1315503
-
-  lcvp_check <- lcvp_out[is.na(match(lcvp_out, lcvp_in))] %>% sort()
+  lcvp_out <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique()
+  lcvp_in  <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique()
   
-  tt <- tibble(sp = lcvp_check)
+  lcvp_add <- tibble(sp_add = lcvp_out[is.na(match(lcvp_out, lcvp_in))]) %>%
+    mutate(
+      ## Split names based on space
+      split_input  = sp_add %>% str_split(" ", n = 5),
+      genus        = map_chr(split_input, 1, .default = ""),
+      epithet      = map_chr(split_input, 2, .default = ""),
+      intrasp      = map_chr(split_input, 3, .default = ""),
+      intrasp_name = map_chr(split_input, 4, .default = ""),
+      leftover     = map_chr(split_input, 5, .default = ""),
+      
+      ## Separate name from authors (!!! Doesn't handle sections, too rare)
+      sp_name = if_else(
+        intrasp %in% check_intrasp,
+        paste(genus, epithet, intrasp, intrasp_name, sep = " "),
+        paste(genus, epithet, sep = " ")
+      ),
+      sp_author = if_else(
+        intrasp %in% check_intrasp,
+        leftover,
+        paste(intrasp, intrasp_name, leftover, sep = " ")
+      ),
+      Input.Taxon = sp_add, 
+      Status = "accepted",
+      PL.comparison = "",
+      PL.alternative = "",
+      Output.Taxon = sp_add,
+      Family = "", 
+      Order = ""
+    ) %>%
+    filter(sp_author != "") %>%
+    select(Input.Taxon, Status, PL.comparison, PL.alternative, Output.Taxon, Family, Order)
     
   ## Address 1. and 2.
-  data_lcvp1 <- LCVP::tab_lcvp %>%
+  data_lcvp1 <- LCVP::tab_lcvp %>% 
+    as_tibble() %>%
+    bind_rows(lcvp_add) %>%
+    arrange(Input.Taxon) %>%
     as_tibble() %>%
     mutate(
       ## Make unique id
@@ -158,6 +188,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
       id_order = trunc(log10(id_num)),
       id_num2  = str_pad(id_num, max(id_order) + 1, pad = "0", ),
       taxonID  = paste0("lcvp-", id_num2),
+      taxonomicStatus = if_else(Status == "unresolved", "Unchecked", str_to_title(Status)),
       
       ## Split names based on space
       split_input  = Input.Taxon %>% str_split(" ", n = 5),
@@ -179,17 +210,17 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
         paste(intrasp, intrasp_name, leftover, sep = " ")
       )
     ) %>%
-    select(taxonID, scientificName, scientificNameAuthorship, taxonomicStatus = Status, family = Family, Input.Taxon, Output.Taxon)
+    select(taxonID, scientificName, scientificNameAuthorship, taxonomicStatus, family = Family, Input.Taxon, Output.Taxon)
   
   ## Create a subset with accepted names only for 3.
   data_lcvp_acc <- data_lcvp1 %>% 
-    filter(taxonomicStatus == "accepted") %>% 
+    filter(taxonomicStatus == "Accepted") %>% 
     select(name_acc = Output.Taxon, acceptedNameUsageID = taxonID)
   
   ## Join the accepted name ID with the table
   data_lcvp2 <- data_lcvp1 %>%
     left_join(data_lcvp_acc, by = c("Output.Taxon" = "name_acc")) %>%
-    mutate(acceptedNameUsageID = if_else(taxonomicStatus == "accepted", "", acceptedNameUsageID)) %>%
+    mutate(acceptedNameUsageID = if_else(taxonomicStatus == "Accepted", "", acceptedNameUsageID)) %>%
     select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus)
   
   ## Make the WFO backbone
@@ -202,17 +233,17 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
     taxonomicStatus = "taxonomicStatus"
   )
   
-  data.table::fwrite(data_lcvp3, file = paste0(path_data, "/", wfo_backbone_lcvp), sep = "\t")
+  data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t")
   
   ## !!! Remove tmp objects
-  rm(check_intrasp, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
+  rm(check_intrasp, lcvp_in, lcvp_out, lcvp_add, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
   ## !!!
   
   time2 <- Sys.time()
   dt <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Done", " - ", dt, " sec."))
   
-} ## Enf if wfo_backbone_lcvp
+} ## End if wfo_backbone_lcvp
 
 
 ## Setup ####################################################################
