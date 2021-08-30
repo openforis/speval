@@ -281,7 +281,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     filter(status == "accepted", count == 2) %>%
     select(name, process, status, accepted_name) %>%
     distinct() %>%
-    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list) %>%
+    rowwise() %>% 
+    mutate_if(is.list, ~paste(unlist(.), collapse = '|')) 
   
   name_notsolved <- tab_out %>%
     filter(status %in% c("unresolved", "noref"), str_count(name, " ") > 0) %>%
@@ -292,7 +294,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     filter(name %in% name_notsolved) %>%
     select(name, process, status, accepted_name) %>%
     distinct() %>%
-    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list) %>%
+    rowwise() %>% 
+    mutate_if(is.list, ~paste(unlist(.), collapse = '|')) 
   
   stat3 <- bind_rows(stat3a, stat3b)
   
