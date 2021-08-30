@@ -67,6 +67,8 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
       refdata_id    = "lcvp",
       refdata       = "Leipzig Catalogue of Vascular Plants",
       matching_algo = "lcvplants::LCVP()",
+      algo_reduced  = matching_algo %>% str_remove(".*::") %>% str_remove("\\(") %>% str_remove("\\)"),
+      process       = paste0(refdata_id, "_", algo_reduced),
       
       ## Split names based on space
       split_input  = LCVP_Accepted_Taxon %>% str_split(" ", n = 5),
@@ -88,7 +90,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
         paste(infrasp, infrasp_name, leftover, sep = " ")
       )
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   
@@ -100,7 +102,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
   }
   
   ## Output
-  out <- list(tab = solved_out, dt = dt)
+  out <- list(tab = solved_out, dt = tibble(process = unique(solved_out$process), duration_sec = dt))
     
 }
 

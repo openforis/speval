@@ -239,24 +239,70 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   ## Analysis results #######################################################
   
   ## !!! For debugging analysis
-  res_2 <- res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-28-1109-resLCVP-harmo.csv"), dt = 1000)
-  res_2$tab$refdata <- "a"
+  # res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-08-30-1226-resWFO-withlcvp_conv-harmo.csv"), duration = tibble(process = "lcvp_conv_WFO.match", duration_sec = 1000))
+  # res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-08-30-1224-resLCVP-harmo.csv")             , duration = tibble(process = "lcvp_LCVP"          , duration_sec = 1000))
+  ## !!!
   
-  tab <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
-  dt  <- mget(ls(pattern = "res_")) %>% map_dfr(., 2) %>% as.numeric()
+  tab      <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
+  duration <- mget(ls(pattern = "res_")) %>% map_dfr(., 2)
   
-  stat1 <- tab %>%
-    group_by(refdata_id,	refdata,	matching_algo, status) %>%
+  ## Add number of solution for each taxon
+  count_taxon <- tab %>% 
+    select(name, accepted_name) %>%
+    distinct() %>%
+    group_by(name) %>%
+    summarise(count = n())
+  
+  tab_out <- tab %>%
+    left_join(count_taxon, by = "name")
+  
+  table(tab_out$count, useNA = "always")
+  
+  ## STAT1: Compare nb of records per status for each reference data and algorithm
+  stat1 <- tab_out %>%
+    group_by(process, refdata,	matching_algo, status) %>%
     summarize(count = n()) %>%
     pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
-    add_column(duration = dt)
-    
+    left_join(duration, by = "process")
+  
+  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
+  
+  ## STAT2: Extract all non-unique solutions
+  stat2 <- tab_out %>%
+    filter(count > 1) %>%
+    select(name, process, status, accepted_name) %>%
+    distinct() %>%
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+  
+  write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))  
+  
+  ## STAT3: List conflicts and unmatched
+  stat3a <- tab_out %>%
+    filter(status == "accepted", count == 2) %>%
+    select(name, process, status, accepted_name) %>%
+    distinct() %>%
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+  
+  name_notsolved <- tab_out %>%
+    filter(status %in% c("unresolved", "noref"), str_count(name, " ") > 0) %>%
+    pull(name) %>%
+    unique()
+  
+  stat3b <- tab_out %>%
+    filter(name %in% name_notsolved) %>%
+    select(name, process, status, accepted_name) %>%
+    distinct() %>%
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+  
+  stat3 <- bind_rows(stat3a, stat3b)
+  
+  write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat3.csv")))
   
   
   ## Output #################################################################
   
-  out <- list(tab = tab, time = time , stat1 = stat1)
-  save(out, file = file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), ".Rdata")))
+  out <- list(tab = tab, duration = duration , stat1 = stat1, stat2 = stat2, stat3 = stat3)
+  save(out, file = file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stats-and-tables.Rdata")))
   
   out
   

@@ -29,16 +29,16 @@
 solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_table = NULL, .filename = "", .n_cores = 1) {
   
   ## !!! For debbugging only
-  .taxon <- species_clean(.path = iFile) %>%
-    filter(!is.na(input_ready)) %>%
-    pull(input_ready) %>%
-    unique()
-  .ref_file   = wfo_backbone_lcvp
-  .ref_name   = "Leipzig Catalogue of Vascular Plants"
-  .multicore  = T
-  .save_table = path_res
-  .filename   = get_filename(.path = iFile)
-  .n_cores    = parallel::detectCores() - 1
+  # .taxon <- species_clean(.path = iFile) %>%
+  #   filter(!is.na(input_ready)) %>%
+  #   pull(input_ready) %>%
+  #   unique()
+  # .ref_file   = wfo_backbone_lcvp
+  # .ref_name   = "Leipzig Catalogue of Vascular Plants"
+  # .multicore  = T
+  # .save_table = path_res
+  # .filename   = get_filename(.path = iFile)
+  # .n_cores    = parallel::detectCores() - 1
   ## !!!
   
   
@@ -50,7 +50,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   #input <- .taxon
   
   ## Find table name if .path exists
-  ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "WFO_backbone", get_filename(.ref_file))
+  ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "WFO_backbone", get_filename(.ref_file)) %>% str_to_lower()
   
   ## --- RUN WFO ---
   message(paste0("...Running WFO with ", ref_filename, " dataset."))
@@ -90,8 +90,6 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   # table(solved_wfo$taxonomicStatus, useNA = "always")
   # table(solved_wfo$Fuzzy, useNA = "always")
   
-  solved_wfo <- read_csv("results/NFMA_species_mess-2021-08-28-1134-resWFO-withLCVP_conv.csv")
-  
   ## --- Harmonize ---
   solved_tmp <- tibble(name = .taxon) %>%
     left_join(solved_wfo, by = c("name" = "spec.name")) %>%
@@ -99,15 +97,17 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
     mutate(fuzzy_recalc = as.numeric(utils::adist(name, scientificName, ignore.case = T))) %>%
     ungroup() %>%
     mutate(
+      
+      ## Calculate harmonized indicators
       fuzzy_dist      = if_else(is.na(Fuzzy.dist), 0, Fuzzy.dist),
       fuzzy           = Fuzzy,
       #fuzzy_res       = NA,
       status          = case_when(
-        fuzzy_recalc == 0          & taxonomicStatus == "accepted" ~ "accepted",
-        fuzzy_recalc == fuzzy_dist & taxonomicStatus == "accepted" ~ "accepted",
-        fuzzy_recalc != fuzzy_dist & taxonomicStatus == "accepted" ~ "synonym",
+        taxonomicStatus == "Unchecked"                             ~ "unresolved",
+        fuzzy_recalc == fuzzy_dist & taxonomicStatus == "Accepted" ~ "accepted",
+        fuzzy_recalc != fuzzy_dist & taxonomicStatus == "Accepted" ~ "synonym",
         taxonomicStatus == "" | is.na(taxonomicStatus)             ~ "noref", 
-        TRUE ~ taxonomicStatus
+        TRUE ~ NA_character_
         ),
       score = case_when(
         is.na(taxonomicStatus) ~ "name not tested",
@@ -116,14 +116,18 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
         fuzzy_dist >  0        ~ "misspelled name",
         TRUE ~ NA_character_
       ),
-      accepted_id     = taxonID,
       refdata_id      = ref_filename,
       refdata         = .ref_name,
       matching_algo   = "WorldFlora::WFO.match()",
+      algo_reduced    = matching_algo %>% str_remove(".*::") %>% str_remove("\\(") %>% str_remove("\\)"),
+      process         = paste0(refdata_id, "_", algo_reduced),
+      
+      ## Accepted names
+      accepted_id     = taxonID,
       accepted_name   = scientificName,
       accepted_author = scientificNameAuthorship,
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   
   ## If submitted name duplicated and one accepted name is an homonym, remove the other accepted names
@@ -131,15 +135,30 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
     group_by(name) %>%
     summarise(count = n()) 
   
-  is_accepted <- solved_tmp %>%
-    filter(name == accepted_name) %>%
-    mutate(is_accepted = TRUE) %>%
-    select(name, is_accepted)
+  has_accepted <- solved_tmp %>%
+    filter(status == "accepted") %>%
+    mutate(has_accepted = TRUE) %>%
+    select(name, has_accepted)
+  
+  has_synonym <- solved_tmp %>%
+    filter(status == "synonym") %>%
+    mutate(has_synonym = TRUE) %>%
+    select(name, has_synonym)
   
   solved_out <- solved_tmp %>%
-    left_join(count_names, by = "name") %>%
-    left_join(is_accepted, by = "name") %>%
-    filter(!(count > 1 & is_accepted == TRUE & name != accepted_name))
+    left_join(count_names , by = "name") %>%
+    left_join(has_accepted, by = "name") %>%
+    left_join(has_synonym , by = "name") %>%
+    mutate(
+      has_accepted = replace_na(has_accepted, FALSE),
+      has_synonym  = replace_na(has_synonym , FALSE)
+      ) %>%
+    filter(
+      !(count > 1 & has_accepted == TRUE & status != "accepted"),
+      !(count > 1 & has_accepted == FALSE & has_synonym == TRUE & status != "synonym")
+      ) %>%
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    distinct()
   ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
@@ -159,7 +178,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   }
   
   ## Output
-  list(tab = solved_out, dt = dt)
+  list(tab = solved_out, dt = tibble(process = unique(solved_out$process), duration_sec = dt))
     
 }
 

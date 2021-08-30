@@ -36,8 +36,6 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   ## Check function inputs
   stopifnot(is.character(.taxon))
   stopifnot(is.integer(.gnr_src))
-  stopifnot(is.null(.save_table)|is.character(.save_table))
-  if (!is.null(.save_table)) stopifnot(dir.exists(.save_table))
   
   ## Remove genus alone from the data
   #input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort()
@@ -90,13 +88,17 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
         TRUE ~ NA_character_
         ),
       accepted_id   = NA_character_,
-      refdata_id    = "Tropicos",
+      refdata_id    = "tropicos",
       refdata       = "Tropicos - Missouri Botanical Garden",
       matching_algo = "taxize::gnr_resolve()",
+      algo_reduced    = matching_algo %>% str_remove(".*::") %>% str_remove("\\(") %>% str_remove("\\)"),
+      process         = paste0(refdata_id, "_", algo_reduced),
+      
+      ## Accepted name
       accepted_name = matched_name2,
       accepted_author = NA_character_
     ) %>%
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   
@@ -108,7 +110,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   }
   
   ## Output
-  list(tab = solved_out, dt = dt)
+  list(tab = solved_out, dt = tibble(process = unique(solved_out$process), duration_sec = dt))
   
 }
 
