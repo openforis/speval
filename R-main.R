@@ -44,22 +44,14 @@ source("global.R")
 # 
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Senegalia furcatispina"))
 
-LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus communis"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus communis"))
+
+
 
 ## Job setup
 #iFile  <- "demo/NFMA_species_mess.csv"
 iFile  <- "demo/NFMA_species_clean100.csv"
 how_to <- "compare"
-
-## Create a subset for easy testing
-# set.seed(11)
-# subset <- species_clean(.path = iFile) %>% 
-#   filter(!is.na(input_ready)) %>%
-#   pull(input_ready) %>%
-#   sample(., 100) %>%
-#   sort()
-# 
-# write_csv(tibble(scientific_name = subset), "demo/NFMA_species_clean100.csv")
 
 ## --- Run species identification as job ---
 dir.create("tmp", showWarnings = F)
