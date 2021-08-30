@@ -17,16 +17,9 @@ source("global.R")
 # WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_file, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
 # WorldFlora::WFO.match(c("Zizyphus", "Ziziphus", "Accacia", "Acacia"), WFO.file = wfo_backbone_lcvp, First.dist = TRUE, Fuzzy.one = T, Fuzzy.max = Inf)
 
-# 
-# df <- tibble(sp_name = "Zizyphus", genus = "Zizyphus", sp = "")
-# WorldFlora::WFO.match(df, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, Fuzzy = 2,  First.dist = TRUE, Fuzzy.one = T)
-# 
-# df2 <- tibble(sp_name = "Zizyphus cinnamomum", genus = "Zizyphus", sp = "cinnamomum")
-# WorldFlora::WFO.match(df2, spec.name = "sp_name", Genus = "genus", Species = "sp", WFO.file = wfo_file, verbose = F, Fuzzy = 2)
 
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acer syriacum"))
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acer obtusifolium"))
-# 
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(Output.Taxon == "")
 # 
 # lcvp_tab <- LCVP::tab_lcvp
@@ -35,16 +28,14 @@ source("global.R")
 # 
 # lcvp_check <- lcvp_out[is.na(match(lcvp_out, lcvp_in))] %>% sort()
 # 
-# lcvp_check[2]
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Output.Taxon, lcvp_check[2]))
-# 
 # LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, lcvp_check[1]))
-# 
 # tt <- LCVP::tab_lcvp %>% as_tibble() %>% filter(Output.Taxon %in% lcvp_check)
-# 
-# LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Senegalia furcatispina"))
-
+ 
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Senegalia furcatispina"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus communis"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
 
 
 

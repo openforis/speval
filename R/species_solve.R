@@ -272,7 +272,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     filter(count > 1) %>%
     select(name, process, status, accepted_name) %>%
     distinct() %>%
-    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list)
+    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list) %>%
+    rowwise() %>% 
+    mutate_if(is.list, ~paste(unlist(.), collapse = '|'))
   
   write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))  
   
