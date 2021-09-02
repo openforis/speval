@@ -40,7 +40,7 @@
 species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL, 
                           .multicore = TRUE, .slices_threshold = 100,
                           .ref_lcvp = NULL, .ref_wfo = NULL, .ref_gts = NULL, 
-                          .gts = NULL, .tx_src = NULL) {
+                          .ref_ncbi = NULL, .ref_gbif = NULL, .gts = NULL, .tx_src = NULL) {
   
   ## !!! For testing only
   # .path             <- "demo/NFMA_species_mess.csv"
@@ -235,6 +235,63 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   } ## End if WFO
   
   
+  ## --- 5. WFO on NCBI reference data --------------------------------------
+  if (.how_to %in% c("compare", "integrate", "wfo_ncbi")) {
+    
+    message("Start WFO on NCBI...")
+    
+    ## Select data
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_tropicos)
+    
+    ## Run service
+    res_ncbi <- solve_wfo(
+      .taxon      = species_notsolved, 
+      .ref_file   = .ref_ncbi,
+      .ref_name   = "National Center for Biotechnology Information", 
+      .multicore  = .multicore, 
+      .save_table = .save_table,
+      .filename   = filename,
+      .n_cores    = n_cores
+    )
+    
+    print(table(res_ncbi$tab$status, useNA = "always"))
+    notsolved_ncbi <- res_ncbi$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    
+  } else {
+    
+    res_ncbi <- list(tab = NULL, dt = NULL)
+    
+  } ## End if WFO on NCBI
+  
+  
+  
+  ## --- 6. WFO on GBIF reference data --------------------------------------
+  if (.how_to %in% c("compare", "integrate", "wfo_ncbi")) {
+    
+    message("Start WFO on GBIF...")
+    
+    ## Select data
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_ncbi)
+    
+    ## Run service
+    res_gbif <- solve_wfo(
+      .taxon      = species_notsolved, 
+      .ref_file   = .ref_gbif,
+      .ref_name   = "Global Biodiversity Information Facility", 
+      .multicore  = .multicore, 
+      .save_table = .save_table,
+      .filename   = filename,
+      .n_cores    = n_cores
+    )
+    
+    print(table(res_gbif$tab$status, useNA = "always"))
+    notsolved_gbif <- res_gbif$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    
+  } else {
+    
+    res_ncbi <- list(tab = NULL, dt = NULL)
+    
+  } ## End if WFO on NCBI
   
   ## Analysis results #######################################################
   
@@ -258,12 +315,23 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   table(tab_out$count, useNA = "always")
   
+  write_csv(tab_out, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-results.csv")))
+  
   ## STAT1: Compare nb of records per status for each reference data and algorithm
+  
+  service_order <- tibble(
+    process = c("lcvp_LCVP", "lcvp_conv_WFO.match", "wfo_backbone_WFO.match",  "tropicos_gnr_resolve", "ncbi_conv_WFO.match", "gbif_conv_WFO.match"), 
+    order   = 1:6
+  )
+  
   stat1 <- tab_out %>%
     group_by(process, refdata,	matching_algo, status) %>%
     summarize(count = n()) %>%
     pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
-    left_join(duration, by = "process")
+    left_join(duration, by = "process") %>%
+    left_join(service_order, by = "process") %>%
+    arrange(order) %>%
+    select(order, everything())
   
   write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
   
@@ -308,7 +376,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   ## Output #################################################################
   
   out <- list(tab = tab, duration = duration , stat1 = stat1, stat2 = stat2, stat3 = stat3)
-  save(out, file = file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stats-and-tables.Rdata")))
+  
   
   out
   
