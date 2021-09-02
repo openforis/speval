@@ -17,10 +17,9 @@
 ## --- function parameters: 
 ## ---    .data      : Vector of taxonomic names with or without authors. Genus are not evaluated if submitted alone. 
 ## ---                 Preferably output of species_clean().
-## ---    .save_table: NULL or path to export the results. if .path exists (function embedded 
-## ---                 in a higher level function call) it is used in the file name 
+## ---    .save_table: NULL or path to export the results.
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
-## ---    .n_cores   : the number of cores to be used for parallel computing
+## ---    .n_cores   : the number of cores to be used for parallel computing.
 
 solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) {
   
