@@ -22,20 +22,27 @@
 ## --- Function parameters:
 ## ---  .path: path to species list to solve
 ## ---  .how_to: how to combine or not the taxonomic name resolution services:
-## ---    "compare"  : Run the input species list on all services
-## ---    "integrate": Run the species list on all service but submit only the unmatch species from service n to service n=1 
-## ---    "lcvp"     : Run on LCVP only
-## ---    "wfo_lcvp" : Run on WFO algorithm with LCVP table backbone only
-## ---    "wfo"      : Run on WFO only
-## ---    "tropicos  : Run on Tropicos only
-## ---  .save_table  : NULL or path to save the service outputs. Raw and harmonized 
-## ---                 outputs are written while only the harmonized outputs are returned by the function 
+## ---    "compare"  : Run the input species list on all services. Doesn't use LCVP(), 
+## ---                 its backbone table is used with WFO.match(), unless .with_lcvp == TRUE.
+## ---    "integrate": Run the species list on all services but submit only the unmatch and unresolved species from service n to service n+1.
+## ---                 (doesn't use LCVP(), backbone table used with WFO.match()).
+## ---    "lcvp"     : Run LCVP.
+## ---    "wfo_lcvp" : Run WFO algorithm with LCVP table as backbone.
+## ---    "wfo"      : Run WFO.
+## ---    "tropicos" : Run Tropicos.
+## ---    "wfo_ncbi" : Run WFO algorithm with NCBI table as backbone.
+## ---    "wfo_gbif" : Run WFO algorithm with GBIF table as backbone.
+## ---  .with_lcvp   : Use LCVP() function. Default FALSE as LCVP backbone data is used with WFO.match().
+## ---  .save_table  : NULL or path to save the function's outputs. Raw and harmonized 
+## ---                 outputs are written while only the harmonized outputs are returned by the function. 
 ## ---  .multicore   : logical. if TRUE, relies on parallel, future, furrr and carrier packages. Use plan(multisession) 
-## ---                 as compatible with all OS types
+## ---                 as compatible with all OS types.
 ## ---  .ref_lcvp    : NULL or path to file LCVP backbone for WFO.match(). Required when all services or "wfo_lcvp" are used.
 ## ---  .ref_wfo     : NULL or path to file WFO backbone for WFO.match(). Required when all services or "wfo" are used.
-
-
+## ---  .ref_ncbi    : NULL or path to file NCBI backbone for WFO.match(). Required when all services or "wfo_ncbi" are used. 
+## ---                 Data comes from taxadb, may not be the latest version.
+## ---  .ref_gbif    : NULL or path to file GBIF backbone for WFO.match(). Required when all services or "wfo_gbif" are used. 
+## ---                 Data comes from taxadb, may not be the latest version.
 
 species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL, 
                           .multicore = TRUE, .slices_threshold = 100,
@@ -121,31 +128,35 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   ## Implementation #########################################################
   
-  ## --- 1. LCVP ------------------------------------------------------------
-  if (.how_to %in% c("compare", "integrate", "lcvp")) {
+  if (.with_LCVP) {
     
-    message("Start LCVP...")
-    
-    
-    ## Select data
-    ## --- Data is the same as first service
-    
-    ## Run service
-    res_lcvp <- solve_lcvp(
-      .taxon      = species_notsolved, 
-      .save_table = .save_table, 
-      .filename   = filename, 
-      .n_cores    = n_cores
+    ## --- 1. LCVP ------------------------------------------------------------
+    if (.how_to %in% c("compare", "integrate", "lcvp")) {
+      
+      message("Start LCVP...")
+      
+      
+      ## Select data
+      ## --- Data is the same as first service
+      
+      ## Run service
+      res_lcvp <- solve_lcvp(
+        .taxon      = species_notsolved, 
+        .save_table = .save_table, 
+        .filename   = filename, 
+        .n_cores    = n_cores
       )
+      
+      print(table(res_lcvp$tab$status, useNA = "always"))
+      notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+      
+    } else {
+      
+      res_lcvp <- list(tab = NULL, dt = NULL)
+      
+    } ## End if LCVP
     
-    print(table(res_lcvp$tab$status, useNA = "always"))
-    notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
-    
-  } else {
-    
-    res_lcvp <- list(tab = NULL, dt = NULL)
-    
-  } ## End if LCVP
+  } ## End if .with_lcvp
   
   
   
@@ -266,7 +277,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   ## --- 6. WFO on GBIF reference data --------------------------------------
-  if (.how_to %in% c("compare", "integrate", "wfo_ncbi")) {
+  if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
     message("Start WFO on GBIF...")
     
@@ -289,9 +300,11 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     
   } else {
     
-    res_ncbi <- list(tab = NULL, dt = NULL)
+    res_gbif <- list(tab = NULL, dt = NULL)
     
-  } ## End if WFO on NCBI
+  } ## End if WFO on GBIF
+  
+  
   
   ## Analysis results #######################################################
   
