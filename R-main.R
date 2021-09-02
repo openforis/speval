@@ -36,7 +36,7 @@ source("global.R")
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus communis"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
-
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acacia mangium"))
 
 
 ## Job setup
@@ -55,16 +55,23 @@ job_script <- paste0(
   .save_table = path_res, 
   .multicore  = T, 
   .ref_lcvp   = wfo_backbone_lcvp, 
+  .ref_ncbi   = wfo_backbone_ncbi, 
+  .ref_gbif   = wfo_backbone_gbif, 
   .ref_wfo    = wfo_file,
   .tx_src     = src_tropicos
   )"
 )
 
 ## Save script
-write_file(job_script, file = "tmp/job_species_solve.R")
+readr::write_file(job_script, file = "tmp/job_species_solve.R")
 ## Run script
 rstudioapi::jobRunScript("tmp/job_species_solve.R", name = "species_solve", workingDir = getwd(), exportEnv = "R_GlobalEnv")
 ## ---
+
+
+## Check results
+res_species$stat1
+res_species$stat1 %>% pull(process)
 
 
 
