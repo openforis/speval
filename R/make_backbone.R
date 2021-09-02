@@ -211,39 +211,39 @@ if (!(wfo_backbone_gbif %in% list.files(recursive = T))) {
 ## --- 4. WFO backbone from UICN --------------------------------------------
 
 # if (!(wfo_backbone_uicn %in% list.files(recursive = T))) {
-#   
+# 
 #   message("Creating WFO backbone dataset from UICN with taxadb::td_create()...")
 #   time1 <- Sys.time()
-#   
+# 
 #   ## Download a local copy of the data if necessary
 #   taxadb::td_create("uicn", version = "2020", overwrite = F)
-#   
+# 
 #   ## Check status
 #   taxa_tbl("uicn", version = "2020") %>% pull(taxonomicStatus) %>% unique()
-#   
+# 
 #   ## Make backbone
-#   gbif_tab <- taxa_tbl("gbif", version = "2020") %>% 
-#     filter(kingdom == "Plantae") %>% 
-#     as_tibble() %>% 
+#   gbif_tab <- taxa_tbl("gbif", version = "2020") %>%
+#     filter(kingdom == "Plantae") %>%
+#     as_tibble() %>%
 #     arrange() %>%
 #     WorldFlora::new.backbone(
-#       taxonID = "taxonID", 
-#       scientificName = "scientificName", 
-#       scientificNameAuthorship = "scientificNameAuthorship", 
+#       taxonID = "taxonID",
+#       scientificName = "scientificName",
+#       scientificNameAuthorship = "scientificNameAuthorship",
 #       acceptedNameUsageID =  "acceptedNameUsageID",
 #       taxonomicStatus = "taxonomicStatus"
 #     )
-#   
+# 
 #   data.table::fwrite(gbif_tab, file = wfo_backbone_gbif, sep = "\t")
-#   
+# 
 #   ## !!! Remove tmp objects
 #   rm(gbif_tab)
 #   ## !!!
-#   
+# 
 #   time2 <- Sys.time()
 #   dt <- round(as.numeric(time2-time1, units = "secs"))
 #   message(paste0("...Done", " - ", dt, " sec."))
-#   
+# 
 # } ## End if wfo_backbone_uicn
 
 
