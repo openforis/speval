@@ -24,10 +24,8 @@
 ## --- function parameters: 
 ## ---    .taxon     : vector of taxonomic names with or without authors. Genus are not evaluated if submitted alone. 
 ## ---                 Preferably output of species_clean().
-## ---    .ref_file  : path to reference table used for WFO.match()
-## ---    .ref_name  : Name to record in the harmonized output table
-## ---    .save_table: NULL or path to export the results. if .path exists (function embedded 
-## ---                 in a higher level function call) it is used in the file name.
+## ---    .gnr_src   : Numeric, the ID of Tropicos from the list of gnrs datasources. Can be obtain from taxize::gnr_datasources().
+## ---    .save_table: NULL or path to export the results. 
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
 
 
@@ -87,6 +85,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
         matched_name2 != name & fuzzy_dist >= 5 ~ "synonym",
         TRUE ~ NA_character_
         ),
+      score         = as.character(score),
       accepted_id   = NA_character_,
       refdata_id    = "tropicos",
       refdata       = "Tropicos - Missouri Botanical Garden",
@@ -98,7 +97,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
       accepted_name = matched_name2,
       accepted_author = NA_character_
     ) %>%
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   

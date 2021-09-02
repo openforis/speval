@@ -21,10 +21,9 @@
 ## ---                 Preferably output of species_clean().
 ## ---    .ref_file  : path to reference table used for WFO.match()
 ## ---    .ref_name  : Name to record in the harmonized output table
-## ---    .save_table: NULL or path to export the results. if .path exists (function embedded 
-## ---                 in a higher level function call) it is used in the file name.
+## ---    .save_table: NULL or path to export the results.
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
-## ---    .n_cores   : the number of cores to be used for parallel computing
+## ---    .n_cores   : the number of cores to be used for parallel computing.
 
 solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_table = NULL, .filename = "", .n_cores = 1) {
   
@@ -33,7 +32,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   #   filter(!is.na(input_ready)) %>%
   #   pull(input_ready) %>%
   #   unique()
-  # .ref_file   = wfo_backbone_lcvp
+  # .ref_file   = wfo_backbone_gbif
   # .ref_name   = "Leipzig Catalogue of Vascular Plants"
   # .multicore  = T
   # .save_table = path_res
@@ -103,10 +102,10 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       fuzzy           = Fuzzy,
       #fuzzy_res       = NA,
       status          = case_when(
-        taxonomicStatus == "Unchecked"                             ~ "unresolved",
-        fuzzy_recalc == fuzzy_dist & taxonomicStatus == "Accepted" ~ "accepted",
-        fuzzy_recalc != fuzzy_dist & taxonomicStatus == "Accepted" ~ "synonym",
-        taxonomicStatus == "" | is.na(taxonomicStatus)             ~ "noref", 
+        str_to_lower(taxonomicStatus) == "unchecked"                             ~ "unresolved",
+        fuzzy_recalc == fuzzy_dist & str_to_lower(taxonomicStatus) == "accepted" ~ "accepted",
+        fuzzy_recalc != fuzzy_dist & str_to_lower(taxonomicStatus) == "accepted" ~ "synonym",
+        taxonomicStatus == "" | is.na(taxonomicStatus)                           ~ "noref", 
         TRUE ~ NA_character_
         ),
       score = case_when(
@@ -127,10 +126,10 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       accepted_name   = scientificName,
       accepted_author = scientificNameAuthorship,
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   
-  ## If submitted name duplicated and one accepted name is an homonym, remove the other accepted names
+  ## If submitted name return several answers, keep only the accepted if exists or the synonym if exists.
   count_names <- solved_tmp %>%
     group_by(name) %>%
     summarise(count = n()) 
