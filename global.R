@@ -19,6 +19,7 @@ library(leaflet.extras)
 
 ## TNRS
 library(taxize)
+library(taxadb)
 library(rentrez) # for NCBI search 
 library(rgbif)
 # remotes::install_github("idiv-biodiversity/LCVP")
@@ -38,6 +39,39 @@ library(tidyverse)
 
 
 
+## Admin input (not accessible for shiny users) #############################
+
+## Path to data and results
+path_data <- "data"
+path_res  <- "results"
+
+## Path to Global Tree Search reference data
+gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
+
+## Path to World Flora Online reference data 
+wfo_file <- file.path(path_data, "classification.txt")
+
+## Path to backbone from LCVP
+wfo_backbone_lcvp <- file.path(path_data, "LCVP_conv.txt")
+
+## Path to backbone from GTS
+## !!! To Be Done: GTS used to check in accepted names from other sources are included, not to correct submitted species lists.
+
+## Path to backbone from NCBI 2020 (2021 not working)
+wfo_backbone_ncbi <- file.path(path_data, "NCBI_conv.txt")
+
+## Path to backbone from NCBI 2020 (2021 not working)
+wfo_backbone_gbif <- file.path(path_data, "GBIF_conv.txt")
+
+
+
+## Create paths plus directories to data and results ########################
+
+dir.create(path_data, showWarnings = F)
+dir.create(path_res, showWarnings = F)
+
+
+
 ## Source functions #########################################################
 
 source("R/other_functions.R", local = T)
@@ -54,196 +88,17 @@ source("R/species_solve.R", local = T)
 
 
 
-## Create paths plus directories to data and results ########################
-
-path_data <- "data"
-dir.create(path_data, showWarnings = F)
-
-path_res <- "results"
-dir.create(path_res, showWarnings = F)
-
-
-
 ## Download and prepare datasets ############################################
 
-## Download and prepare clean species lists from offline Taxonomic name resolution services
+## Download data for offline Taxonomic name resolution services: 
+## 'gts_file', 'wfo_file'
 ## No data is kept in the .GlobalEnv to avoid delays when running Rstudio jobs or multicore operations
+source("R/download_data.R", local = T)
 
+## Make the backbones for WFO.match() with: 
+## 'wfo_backbone_lcvp'
+source("R/make_backbone.R", local = T)
 
-## --- 1. Global Tree Seach ------------------------------------------------- 
-## Get Global Tree Search File from internet if not already downloaded
-gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
-
-if (!(gts_file %in% list.files(recursive = T))) {
-  
-  time1 <- Sys.time()
-  
-  message("Downloading Global Tree Search dataset...")
-  
-  download.file(
-    destfile = paste0(path_data, "/", gts_file), 
-    url      = paste0("https://tools.bgci.org/", gts_file)
-  )
-  
-  time2 <- Sys.time()
-  dt <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Done", " - ", dt, " sec."))
-  
-} ## End if gts_file
-
-
-## --- 2. World Flora Online ------------------------------------------------
-## Get World Flora Online backbone dataset
-wfo_file  <- file.path(path_data, "classification.txt")
-
-if (!(wfo_file %in% list.files(recursive = T))) {
-  
-  message("Downloading World Flora Online backbone dataset...")
-  
-  time1 <- Sys.time()
-  
-  utils::download.file(
-    url      = "http://104.198.143.165/files/WFO_Backbone/_WFOCompleteBackbone/WFO_Backbone.zip", 
-    destfile = paste0(path_data, "/WFO_Backbone.zip")
-  )
-  
-  utils::unzip(
-    zipfile = paste0(path_data, "/WFO_Backbone.zip"),
-    files   = wfo_file, 
-    exdir   = path_data
-    )
-  
-  unlink(paste0(path_data, "/WFO_Backbone.zip"))
-  
-  time2 <- Sys.time()
-  dt <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Done", " - ", dt, " sec."))
-  
-} ## End if wfo_class
-
-
-## --- 3. Make a WFO backbone from LCVP -------------------------------------
-wfo_backbone_lcvp <- file.path(path_data, "LCVP_conv.txt")
-
-if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
-  
-  message("Creating WFO backbone dataset from LCVP::tab_lcvp...")
-  
-  time1 <- Sys.time()
-  
-  check_intrasp <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
-  
-  ## Create dataset compatible with WFO backbone. Requires:
-  ## 1. unique ID
-  ## 2. scientific name separated from author
-  ## 3. replace accepted name for synonyms with ID
-  
-  ## Check missing Output.Taxon in Input.Taxon
-  ## Need to remove unresolved and external status then check for incomplete genus name and missing author name. 
-  ## Keep only taxa with author name to be conservative.
-  lcvp_out <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique()
-  lcvp_in  <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique()
-  
-  lcvp_add <- tibble(sp_add = lcvp_out[is.na(match(lcvp_out, lcvp_in))]) %>%
-    mutate(
-      ## Split names based on space
-      split_input  = sp_add %>% str_split(" ", n = 5),
-      genus        = map_chr(split_input, 1, .default = ""),
-      epithet      = map_chr(split_input, 2, .default = ""),
-      intrasp      = map_chr(split_input, 3, .default = ""),
-      intrasp_name = map_chr(split_input, 4, .default = ""),
-      leftover     = map_chr(split_input, 5, .default = ""),
-      
-      ## Separate name from authors (!!! Doesn't handle sections, too rare)
-      sp_name = if_else(
-        intrasp %in% check_intrasp,
-        paste(genus, epithet, intrasp, intrasp_name, sep = " "),
-        paste(genus, epithet, sep = " ")
-      ),
-      sp_author = if_else(
-        intrasp %in% check_intrasp,
-        leftover,
-        paste(intrasp, intrasp_name, leftover, sep = " ")
-      ),
-      Input.Taxon = sp_add, 
-      Status = "accepted",
-      PL.comparison = "",
-      PL.alternative = "",
-      Output.Taxon = sp_add,
-      Family = "", 
-      Order = ""
-    ) %>%
-    filter(sp_author != "") %>%
-    select(Input.Taxon, Status, PL.comparison, PL.alternative, Output.Taxon, Family, Order)
-    
-  ## Address 1. and 2.
-  data_lcvp1 <- LCVP::tab_lcvp %>% 
-    as_tibble() %>%
-    bind_rows(lcvp_add) %>%
-    arrange(Input.Taxon) %>%
-    as_tibble() %>%
-    mutate(
-      ## Make unique id
-      id_num   = 1:nrow(.),
-      id_order = trunc(log10(id_num)),
-      id_num2  = str_pad(id_num, max(id_order) + 1, pad = "0", ),
-      taxonID  = paste0("lcvp-", id_num2),
-      taxonomicStatus = if_else(Status == "unresolved", "Unchecked", str_to_title(Status)),
-      
-      ## Split names based on space
-      split_input  = Input.Taxon %>% str_split(" ", n = 5),
-      genus        = map_chr(split_input, 1, .default = ""),
-      epithet      = map_chr(split_input, 2, .default = ""),
-      intrasp      = map_chr(split_input, 3, .default = ""),
-      intrasp_name = map_chr(split_input, 4, .default = ""),
-      leftover     = map_chr(split_input, 5, .default = ""),
-      
-      ## Separate name from authors (!!! Doesn't handle sections, too rare)
-      scientificName = if_else(
-        intrasp %in% check_intrasp,
-        paste(genus, epithet, intrasp, intrasp_name, sep = " "),
-        paste(genus, epithet, sep = " ")
-      ),
-      scientificNameAuthorship = if_else(
-        intrasp %in% check_intrasp,
-        leftover,
-        paste(intrasp, intrasp_name, leftover, sep = " ")
-      )
-    ) %>%
-    select(taxonID, scientificName, scientificNameAuthorship, taxonomicStatus, family = Family, Input.Taxon, Output.Taxon)
-  
-  ## Create a subset with accepted names only for 3.
-  data_lcvp_acc <- data_lcvp1 %>% 
-    filter(taxonomicStatus == "Accepted") %>% 
-    select(name_acc = Output.Taxon, acceptedNameUsageID = taxonID)
-  
-  ## Join the accepted name ID with the table
-  data_lcvp2 <- data_lcvp1 %>%
-    left_join(data_lcvp_acc, by = c("Output.Taxon" = "name_acc")) %>%
-    mutate(acceptedNameUsageID = if_else(taxonomicStatus == "Accepted", "", acceptedNameUsageID)) %>%
-    select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus)
-  
-  ## Make the WFO backbone
-  data_lcvp3 <- WorldFlora::new.backbone(
-    data_lcvp2, 
-    taxonID = "taxonID", 
-    scientificName = "scientificName", 
-    scientificNameAuthorship = "scientificNameAuthorship", 
-    acceptedNameUsageID =  "acceptedNameUsageID",
-    taxonomicStatus = "taxonomicStatus"
-  )
-  
-  data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t")
-  
-  ## !!! Remove tmp objects
-  rm(check_intrasp, lcvp_in, lcvp_out, lcvp_add, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
-  ## !!!
-  
-  time2 <- Sys.time()
-  dt <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Done", " - ", dt, " sec."))
-  
-} ## End if wfo_backbone_lcvp
 
 
 ## Setup ####################################################################
