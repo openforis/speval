@@ -44,23 +44,18 @@
 ## ---  .ref_gbif    : NULL or path to file GBIF backbone for WFO.match(). Required when all services or "wfo_gbif" are used. 
 ## ---                 Data comes from taxadb, may not be the latest version.
 
-species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL, 
-                          .multicore = TRUE, .slices_threshold = 100,
-                          .ref_lcvp = NULL, .ref_wfo = NULL, .ref_gts = NULL, 
-                          .ref_ncbi = NULL, .ref_gbif = NULL, .gts = NULL, .tx_src = NULL) {
-  
-  ## !!! For testing only
-  # .path             <- "demo/NFMA_species_mess.csv"
-  # .how_to           <- "compare"
-  # .save_table       <- path_res
-  # .multicore        <- TRUE
-  # .slices_threshold <- 100
-  # .ref_lcvp         <- wfo_backbone_lcvp
-  # .ref_wfo          <- wfo_file
-  # .ref_gts          <- "" ## TBD making WFO backbone from GTS
-  # .gts              <- gts_file
-  # .tx_src           <- src_tropicos
-  ## !!!
+species_solve <- function(.path, 
+                          .how_to     = "wfo_lcvp", 
+                          .with_lcvp  = FALSE, 
+                          .save_table = NULL, 
+                          .multicore  = TRUE,
+                          .ref_lcvp   = NULL, 
+                          .ref_wfo    = NULL, 
+                          .ref_gts    = NULL, 
+                          .ref_ncbi   = NULL, 
+                          .ref_gbif   = NULL, 
+                          .gts        = NULL, 
+                          .tx_src     = NULL) {
   
   time_start <- Sys.time()
   
@@ -97,7 +92,7 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   ## Initiation #############################################################
   
-  ## Get nnumber of cores for multicores subfunctions
+  ## Get number of cores for multicore sub-functions
   n_cores <- parallel::detectCores() - 1
   #n_cores <- if_else(n_cores == 0, 1, n_cores)
   n_cores <- if_else(n_cores == 0, 1, ceiling(n_cores * 2 / 3))
@@ -109,35 +104,26 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     pull(input_ready) %>% 
     unique()
   
-  ## Split species (inc. intraspecies) for genus alone #####################
+  ## Split species (inc. intraspecies) from genus alone
   # species_notsolved <- setdiff(species_cleaned, word(species_cleaned)) %>% unique() %>% sort()
-  # genus_notsolved   <- setdiff(species_cleaned, species_notsolved) %>% unique() %>% sort()
+  # genus_notsolved   <- setdiff(species_cleaned, species_notsolved)     %>% unique() %>% sort()
   
   ## Keep all species and genus alone together
   species_notsolved <- species_cleaned
-  
-  ## !!!For testing only
-  # set.seed(12)
-  # species_notsolved <- sample(species_notsolved, 50)
-  ## !!!
-  
-  ## Check
-  #stopifnot(length(species_cleaned) == length(species_notsolved) + length(genus_notsolved))
   
   
   
   ## Implementation #########################################################
   
-  if (.with_LCVP) {
+  if (.with_LCVP | .how_to == "lcvp") {
     
-    ## --- 1. LCVP ------------------------------------------------------------
+    ## --- 1a. LCVP ---------------------------------------------------------
     if (.how_to %in% c("compare", "integrate", "lcvp")) {
       
       message("Start LCVP...")
       
-      
       ## Select data
-      ## --- Data is the same as first service
+      ## --- Data is species_notsolved as this is the first service
       
       ## Run service
       res_lcvp <- solve_lcvp(
@@ -150,6 +136,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
       print(table(res_lcvp$tab$status, useNA = "always"))
       notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
       
+      ## Update species_notsolved
+      if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
+ 
     } else {
       
       res_lcvp <- list(tab = NULL, dt = NULL)
@@ -160,13 +149,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   
-  ## --- 2. WFO on LCVP reference data --------------------------------------
-  if (.how_to %in% c("compare", "integrate", "wfo_lcvp")) {
+  ## --- 1b. WFO on LCVP reference data -------------------------------------
+  if (.how_to %in% c("compare", "integrate", "wfo_lcvp") & length(species_notsolved != 0)) {
     
-    message("Start WFO on LCVP reference data...")
-    
-    ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
+    message("Start WFO with LCVP reference data...")
     
     ## Run service
     res_wfo_lcvp <- solve_wfo(
@@ -182,6 +168,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     print(table(res_wfo_lcvp$tab$status, useNA = "always"))
     notsolved_wfo_lcvp <- res_wfo_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
+    ## Update species_notsolved
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo_lcvp)
+    
   } else {
     
     res_wfo_lcvp <- list(tab = NULL, dt = NULL)
@@ -190,13 +179,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   
-  ## --- 3. WFO on WFO reference data ---------------------------------------
-  if (.how_to %in% c("compare", "integrate", "wfo")) {
+  ## --- 2. WFO on WFO reference data ---------------------------------------
+  if (.how_to %in% c("compare", "integrate", "wfo") & length(species_notsolved != 0)) {
     
-    message("Start WFO...")
-    
-    ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo_lcvp)
+    message("Start WFO with WFO reference data...")
     
     ## Run service
     res_wfo <- solve_wfo(
@@ -212,6 +198,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     print(table(res_wfo$tab$status, useNA = "always"))
     notsolved_wfo <- res_wfo$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
+    ## Update species_notsolved
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo)
+    
   } else {
     
     res_wfo <- list(tab = NULL, dt = NULL)
@@ -220,13 +209,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   
-  ## --- 4. Tropicos --------------------------------------------------------
-  if (.how_to %in% c("compare", "integrate", "tropicos")) {
+  ## --- 3. Tropicos --------------------------------------------------------
+  if (.how_to %in% c("compare", "integrate", "tropicos") & length(species_notsolved != 0)) {
     
     message("Start Tropicos...")
-    
-    ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo)
     
     ## Run service
     res_tropicos <- solve_tropicos(
@@ -238,7 +224,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     
     print(table(res_tropicos$tab$status, useNA = "always"))
     notsolved_tropicos <- res_tropicos$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
-
+    
+    ## Update species_notsolved
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_tropicos)
+    
   } else {
     
     res_tropicos <- list(tab = NULL, dt = NULL)
@@ -246,13 +235,11 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   } ## End if WFO
   
   
-  ## --- 5. WFO on NCBI reference data --------------------------------------
-  if (.how_to %in% c("compare", "integrate", "wfo_ncbi")) {
+  
+  ## --- 4. WFO on NCBI reference data --------------------------------------
+  if (.how_to %in% c("compare", "integrate", "wfo_ncbi") & length(species_notsolved != 0)) {
     
-    message("Start WFO on NCBI...")
-    
-    ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_tropicos)
+    message("Start WFO on NCBI reference data...")
     
     ## Run service
     res_ncbi <- solve_wfo(
@@ -268,6 +255,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     print(table(res_ncbi$tab$status, useNA = "always"))
     notsolved_ncbi <- res_ncbi$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
+    ## Update species_notsolved
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_ncbi)
+    
   } else {
     
     res_ncbi <- list(tab = NULL, dt = NULL)
@@ -276,13 +266,10 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   
-  ## --- 6. WFO on GBIF reference data --------------------------------------
+  ## --- 5. WFO on GBIF reference data --------------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
-    message("Start WFO on GBIF...")
-    
-    ## Select data
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_ncbi)
+    message("Start WFO on GBIF reference data...")
     
     ## Run service
     res_gbif <- solve_wfo(
@@ -298,6 +285,9 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     print(table(res_gbif$tab$status, useNA = "always"))
     notsolved_gbif <- res_gbif$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
+    ## Update species_notsolved
+    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_gbif)
+    
   } else {
     
     res_gbif <- list(tab = NULL, dt = NULL)
@@ -306,11 +296,11 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   
   
-  ## Analysis results #######################################################
+  ## Group results ##########################################################
   
   ## !!! For debugging analysis
-  # res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-08-30-1226-resWFO-withlcvp_conv-harmo.csv"), duration = tibble(process = "lcvp_conv_WFO.match", duration_sec = 1000))
-  # res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-08-30-1224-resLCVP-harmo.csv")             , duration = tibble(process = "lcvp_LCVP"          , duration_sec = 1000))
+  # res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2044-resWFO-withlcvp_conv-harmo.csv")   , duration = tibble(process = "lcvp_conv_WFO.match"   , duration_sec = 1000))
+  # res_2 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2109-resWFO-withwfo_backbone-harmo.csv"), duration = tibble(process = "wfo_backbone_WFO.match", duration_sec = 1000))
   ## !!!
   
   tab      <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
@@ -323,21 +313,19 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
     group_by(name) %>%
     summarise(count = n())
   
-  tab_out <- tab %>%
-    left_join(count_taxon, by = "name")
+  out_tab <- tab %>% left_join(count_taxon, by = "name")
   
-  table(tab_out$count, useNA = "always")
+  table(out_tab$count, useNA = "always")
+  write_csv(out_tab, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-results.csv")))
   
-  write_csv(tab_out, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-results.csv")))
   
   ## STAT1: Compare nb of records per status for each reference data and algorithm
-  
   service_order <- tibble(
     process = c("lcvp_LCVP", "lcvp_conv_WFO.match", "wfo_backbone_WFO.match",  "tropicos_gnr_resolve", "ncbi_conv_WFO.match", "gbif_conv_WFO.match"), 
     order   = 1:6
   )
   
-  stat1 <- tab_out %>%
+  stat1 <- out_tab %>%
     group_by(process, refdata,	matching_algo, status) %>%
     summarize(count = n()) %>%
     pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
@@ -348,16 +336,48 @@ species_solve <- function(.path, .how_to = "wfo_lcvp", .save_table = NULL,
   
   write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
   
-  ## STAT2: Extract all non-unique solutions
-  stat2 <- tab_out %>%
-    filter(count > 1) %>%
-    select(name, process, status, accepted_name) %>%
-    distinct() %>%
-    pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list) %>%
-    rowwise() %>% 
-    mutate_if(is.list, ~paste(unlist(.), collapse = '|'))
   
-  write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))  
+  # ## STAT2: Extract all non-unique solutions
+  # stat2 <- out_tab %>%
+  #   filter(count > 1) %>%
+  #   select(name, process, status, accepted_name) %>%
+  #   distinct() %>%
+  #   pivot_wider(names_from = process, values_from = c(status, accepted_name), values_fn = list) %>%
+  #   rowwise() %>% 
+  #   mutate_if(is.list, ~paste(unlist(.), collapse = '|'))
+  # 
+  # write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))  
+  
+  
+  
+  ## Assemble results into a final species list #############################
+  
+  ## Unique solution
+  out1 <- out_tab %>%
+    filter(count == 1, status %in% c("accepted", "synonym")) %>%
+    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    distinct()
+  
+  ## No hits or unresolved from all services
+  out2 <-  out_tab %>%
+    filter(count == 1, status %in% c("unresolved", "noref")) %>%
+    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    distinct()
+  
+  ## Solve conflicts: 1 - genus from Tropicos
+  out3 <- out_tab %>%
+    filter(count > 1, name == word(name), process == "tropicos_gnr_resolve") %>%
+    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    distinct()
+  
+  ## Solve conflicts: 2 - prioritize LCVP backbone ounless unresolved/no hit
+  ## !!! May need to make a stat on that to feedback other services !!!
+  out4 <- out_tab %>%
+    filter(count > 1, name != word(name), process == "lcvp_conv_WFO.match", status != "noref") %>%
+    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    distinct()
+  
+  ## !!! Return several numbers !!!.
   
   ## STAT3: List conflicts and unmatched
   stat3a <- tab_out %>%
