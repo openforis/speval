@@ -132,7 +132,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
 
 if (!(wfo_backbone_ncbi %in% list.files(recursive = T))) {
   
-  message("Creating WFO backbone dataset from NNCBI with taxadb::td_create()...")
+  message("Creating WFO backbone dataset from NCBI with taxadb::td_create()...")
   time1 <- Sys.time()
   
   ## Download a local copy of the data if necessary
@@ -209,6 +209,19 @@ if (!(wfo_backbone_gbif %in% list.files(recursive = T))) {
 
 
 ## --- 4. WFO backbone from UICN --------------------------------------------
+
+## UICN is more restricted than other services. We might need to guide users to create an account and download manualy:
+## See cached data from taxadb: https://github.com/boettiger-lab/taxadb-cache/blob/master/R/iucn.R
+## Directions:
+## - Go to: https://www.iucnredlist.org/
+## - Create an account/login
+## - Go to advanced search
+## - Filter by:
+##    + Type: species
+##    + Taxonomy: filter  Plantae > Tracheophyta
+##    + include Species, Subspecies and varieties, Subpopulations
+## - Download search summary. fill path in global.R Admin input section
+
 
 # if (!(wfo_backbone_uicn %in% list.files(recursive = T))) {
 # 
