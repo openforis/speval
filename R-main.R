@@ -40,8 +40,7 @@ source("global.R")
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus kirghisorum"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus sieversii"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Lonchocarpus phlebophyllus"))
-
-LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
 
 
 
@@ -58,6 +57,7 @@ job_script <- paste0(
   "res_species <- species_solve(
   .path       = '", iFile, "', 
   .how_to     = '", how_to, "', 
+  .with_lcvp  = FALSE,
   .save_table = path_res, 
   .multicore  = T, 
   .ref_lcvp   = wfo_backbone_lcvp, 
