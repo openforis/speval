@@ -49,9 +49,9 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   #   solved_pow[[i]] <- out
   # }
 
-  solved_pow <- map_dfr(.taxon, function(x){
+  solved_pow <- map_dfr(input, function(x){
     Sys.sleep(2)
-    out <- taxize::pow_search(x)$data
+    out <- taxize::pow_search(x, limit = 1)$data
     if(!is.null(out)) out$input <- x
     out
   })
@@ -64,8 +64,11 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   # table(solved_wfo$taxonomicStatus, useNA = "always")
   # table(solved_wfo$Fuzzy, useNA = "always")
   
+  tt <- tibble(sc_name = .taxon) %>%
+    left_join(solved_pow, by = c("name" = "input"))
+  
   ## --- Harmonize ---
-  solved_tmp <- tibble(name = .taxon) %>%
+  solved_tmp <- tibble(sc_name = .taxon) %>%
     left_join(solved_pow, by = c("name" = "input")) %>%
     rowwise() %>%
     mutate(fuzzy_recalc = as.numeric(utils::adist(name, scientificName, ignore.case = T))) %>%

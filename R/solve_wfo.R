@@ -90,10 +90,10 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   # table(solved_wfo$Fuzzy, useNA = "always")
   
   ## --- Harmonize ---
-  solved_tmp <- tibble(name = .taxon) %>%
-    left_join(solved_wfo, by = c("name" = "spec.name")) %>%
+  solved_tmp <- tibble(sc_name = .taxon) %>%
+    left_join(solved_wfo, by = c("sc_name" = "spec.name")) %>%
     rowwise() %>%
-    mutate(fuzzy_recalc = as.numeric(utils::adist(name, scientificName, ignore.case = T))) %>%
+    mutate(fuzzy_recalc = as.numeric(utils::adist(sc_name, scientificName, ignore.case = T))) %>%
     ungroup() %>%
     mutate(
       
@@ -126,28 +126,28 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       accepted_name   = scientificName,
       accepted_author = scientificNameAuthorship,
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   
   ## If submitted name return several answers, keep only the accepted if exists or the synonym if exists.
   count_names <- solved_tmp %>%
-    group_by(name) %>%
+    group_by(sc_name) %>%
     summarise(count = n()) 
   
   has_accepted <- solved_tmp %>%
     filter(status == "accepted") %>%
     mutate(has_accepted = TRUE) %>%
-    select(name, has_accepted)
+    select(sc_name, has_accepted)
   
   has_synonym <- solved_tmp %>%
     filter(status == "synonym") %>%
     mutate(has_synonym = TRUE) %>%
-    select(name, has_synonym)
+    select(sc_name, has_synonym)
   
   solved_out <- solved_tmp %>%
-    left_join(count_names , by = "name") %>%
-    left_join(has_accepted, by = "name") %>%
-    left_join(has_synonym , by = "name") %>%
+    left_join(count_names , by = "sc_name") %>%
+    left_join(has_accepted, by = "sc_name") %>%
+    left_join(has_synonym , by = "sc_name") %>%
     mutate(
       has_accepted = replace_na(has_accepted, FALSE),
       has_synonym  = replace_na(has_synonym , FALSE)
@@ -156,7 +156,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       !(count > 1 & has_accepted == TRUE & status != "accepted"),
       !(count > 1 & has_accepted == FALSE & has_synonym == TRUE & status != "synonym")
       ) %>%
-    select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(sc_name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   

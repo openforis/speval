@@ -69,20 +69,20 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   ## --- END RUN LCVP ---
   
   ## --- Harmonize ---
-  solved_out <- tibble(name = .taxon) %>%
-    left_join(solved_tropicos, by = c("name" = "user_supplied_name")) %>%
+  solved_out <- tibble(sc_name = .taxon) %>%
+    left_join(solved_tropicos, by = c("sc_name" = "user_supplied_name")) %>%
     rowwise() %>%
-    mutate(fuzzy_dist = if_else(is.na(matched_name2), 0, as.numeric(utils::adist(name, matched_name2, ignore.case = T)))) %>%
+    mutate(fuzzy_dist = if_else(is.na(matched_name2), 0, as.numeric(utils::adist(sc_name, matched_name2, ignore.case = T)))) %>%
     ungroup() %>%
     mutate(
       fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
       #fuzzy_res     = NA,
       status        = case_when(
         is.na(matched_name2) ~ "noref",
-        matched_name2 == name & score >= 0.5    ~ "accepted",
-        matched_name2 == name & score <  0.5    ~ "unresolved",
-        matched_name2 != name & fuzzy_dist < 5  ~ "accepted",
-        matched_name2 != name & fuzzy_dist >= 5 ~ "synonym",
+        matched_name2 == sc_name & score >= 0.5    ~ "accepted",
+        matched_name2 == sc_name & score <  0.5    ~ "unresolved",
+        matched_name2 != sc_name & fuzzy_dist < 5  ~ "accepted",
+        matched_name2 != sc_name & fuzzy_dist >= 5 ~ "synonym",
         TRUE ~ NA_character_
         ),
       score         = as.character(score),
@@ -97,7 +97,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
       accepted_name = matched_name2,
       accepted_author = NA_character_
     ) %>%
-    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   

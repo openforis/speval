@@ -124,7 +124,7 @@ species_solve <- function(.path,
   ##
   
   ## --- 1a. LCVP() ---------------------------------------------------------
-  if (.with_LCVP | .how_to == "lcvp") {
+  if (.with_lcvp | .how_to == "lcvp") {
     
     if (.how_to %in% c("compare", "integrate", "lcvp")) {
       
@@ -142,7 +142,7 @@ species_solve <- function(.path,
       )
       
       print(table(res_lcvp$tab$status, useNA = "always"))
-      notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+      notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
       
       ## Update species_notsolved
       if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
@@ -174,7 +174,7 @@ species_solve <- function(.path,
       )
     
     print(table(res_wfo_lcvp$tab$status, useNA = "always"))
-    notsolved_wfo_lcvp <- res_wfo_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_wfo_lcvp <- res_wfo_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
     
     ## Update species_notsolved
     if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo_lcvp)
@@ -204,7 +204,7 @@ species_solve <- function(.path,
       )
     
     print(table(res_wfo$tab$status, useNA = "always"))
-    notsolved_wfo <- res_wfo$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_wfo <- res_wfo$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
     
     ## Update species_notsolved
     if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_wfo)
@@ -231,7 +231,7 @@ species_solve <- function(.path,
     )
     
     print(table(res_tropicos$tab$status, useNA = "always"))
-    notsolved_tropicos <- res_tropicos$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_tropicos <- res_tropicos$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
     
     ## Update species_notsolved
     if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_tropicos)
@@ -261,7 +261,7 @@ species_solve <- function(.path,
     )
     
     print(table(res_ncbi$tab$status, useNA = "always"))
-    notsolved_ncbi <- res_ncbi$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_ncbi <- res_ncbi$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
     
     ## Update species_notsolved
     if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_ncbi)
@@ -291,7 +291,7 @@ species_solve <- function(.path,
     )
     
     print(table(res_gbif$tab$status, useNA = "always"))
-    notsolved_gbif <- res_gbif$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    notsolved_gbif <- res_gbif$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
     
     ## Update species_notsolved
     if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_gbif)
@@ -310,13 +310,14 @@ species_solve <- function(.path,
   
   message("\n---\nAnalyzing first results.\n---\n")
   
+  time1 <- Sys.time()
   
   ## !!! For debugging analysis
-  #res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2044-resWFO-withlcvp_conv-harmo.csv")   , duration = tibble(process = "lcvp_conv_WFO.match"   , duration_sec = 1000))
-  res_2 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2109-resWFO-withwfo_backbone-harmo.csv"), duration = tibble(process = "wfo_backbone_WFO.match", duration_sec = 1000))
-  res_3 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2116-resWFO-withncbi_conv-harmo.csv")   , duration = tibble(process = "ncbi_conv_WFO.match"   , duration_sec = 1000))
-  res_4 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2128-resWFO-withgbif_conv-harmo.csv")   , duration = tibble(process = "gbif_conv_WFO.match"   , duration_sec = 1000))
-  res_5 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2113-resTropicos-harmo.csv")            , duration = tibble(process = "tropicos_gnr_resolve"  , duration_sec = 1000))
+  #res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1718-resWFO-withlcvp-harmo.csv"), duration = tibble(process = "lcvp_WFO.match"      , duration_sec = 1000))
+  res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1720-resWFO-withwfo-harmo.csv") , duration = tibble(process = "wfo_WFO.match"       , duration_sec = 1000))
+  res_3 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1721-resWFO-withncbi-harmo.csv"), duration = tibble(process = "ncbi_WFO.match"      , duration_sec = 1000))
+  res_4 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1723-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match"      , duration_sec = 1000))
+  res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1721-resTropicos-harmo.csv")    , duration = tibble(process = "tropicos_gnr_resolve", duration_sec = 1000))
   ## !!!
   
   
@@ -327,30 +328,30 @@ species_solve <- function(.path,
   
   ## Add number of duplicates for each submitted taxon
   count_input <- tab %>%
-    group_by(name) %>%
+    group_by(sc_name) %>%
     summarise(num_input = n())
     
   ## Add number of solutions for each submitted taxon
   count_taxon <- tab %>% 
-    select(name, accepted_name) %>%
+    select(sc_name, accepted_name) %>%
     distinct() %>%
-    group_by(name) %>%
+    group_by(sc_name) %>%
     summarise(num_taxon = n())
   
   ## Add number of solutions per service for each submitted taxon 
   count_dup <- tab %>% 
-    select(name, process, accepted_name) %>%
+    select(sc_name, process, accepted_name) %>%
     distinct() %>%
-    group_by(name, process) %>%
+    group_by(sc_name, process) %>%
     summarise(num_dup = n())
   
   ## Categorize solutions
   out_tab <- tab %>% 
-    left_join(count_input, by = "name") %>%
-    left_join(count_taxon, by = "name") %>%
-    left_join(count_dup, by = c("name", "process")) %>%
+    left_join(count_input, by = "sc_name") %>%
+    left_join(count_taxon, by = "sc_name") %>%
+    left_join(count_dup, by = c("sc_name", "process")) %>%
     mutate(result_type = case_when(
-      word(name) == name                                    ~ "genus only",
+      word(sc_name) == sc_name                                    ~ "genus only",
       is.na(status)                                         ~ "backbone reference error",
       num_taxon == 1 & status %in% c("accepted", "synonym") ~ "all services",
       num_taxon == 1 & status %in% c("unresolved", "noref") ~ "no service",
@@ -389,7 +390,7 @@ species_solve <- function(.path,
     select(-order) %>%
     mutate(across(where(is.numeric), as.character)) %>%
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
-
+  
   write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
   
   
@@ -397,17 +398,16 @@ species_solve <- function(.path,
   ## First process: if LCVP() in the process use the service after to favor lcvp_WFO.match()
   first_process <- if_else(.with_lcvp, stat1$process[4], stat1$process[3])
   
-  
   ## Unique solutions
   out1 <- out_tab %>%
     filter(result_type == "all services", num_input == num_process, process == first_process) %>%
-    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    select(sc_name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
 
   ## Genus only: take from Tropicos
   out2 <- out_tab %>%
     filter(result_type == "genus only", process == "tropicos_gnr_resolve", status == "accepted") %>%
-    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    select(sc_name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
   
   ## Conflicts between services: take first process as reference for accepted and synonyms (lcvp_WFO.match() unless specific service is called)
@@ -418,60 +418,60 @@ species_solve <- function(.path,
       status %in% c("accepted", "synonym"),
       num_dup == 1
       ) %>%
-    pull(name)
+    pull(sc_name)
 
   out3_tmp <- out_tab %>%
     filter(result_type  %in% c("conflict between services", "conflict intra service")) %>%
-    mutate(unique_firstprocess = if_else(name %in% unique_firstprocess, TRUE, FALSE))
+    mutate(unique_firstprocess = if_else(sc_name %in% unique_firstprocess, TRUE, FALSE))
   
   ## Check
   # table(out3_tmp$unique_lcvp)
   
   out3 <- out3_tmp %>%
     filter(unique_firstprocess, process == first_process) %>%
-    select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    select(sc_name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
   
   ## Combine unique solutions and unsolved
   solved1 <- bind_rows(out1, out2, out3)
   
   ## Check
-  #solved1 %>% group_by(name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(name)
+  #solved1 %>% group_by(sc_name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(sc_name)
   
   
   
   ## -- Combine remaining unsolved ------------------------------------------
-  length(unique(out_tab$name)) - length(unique(solved1$name))
-  
   nout1  <- out_tab %>% filter(result_type == "no service") %>% 
-    pull(name) %>% unique() %>% setdiff(., solved1$name)
+    pull(sc_name) %>% unique() %>% setdiff(., solved1$sc_name)
   nout1b <- out_tab %>% filter(result_type == "all services", num_input != num_process, process == first_process) %>% ## Author conflict in LCVP backbone
-    pull(name) %>% unique() 
+    pull(sc_name) %>% unique() 
   nout2  <- out_tab %>% filter(result_type == "genus only", process == "tropicos_gnr_resolve", status != "accepted") %>% 
-    pull(name) %>% unique()
+    pull(sc_name) %>% unique()
   nout3  <- out3_tmp %>% filter(!unique_firstprocess) %>% 
-    pull(name) %>% unique()
+    pull(sc_name) %>% unique()
   
-  notsolved1 <- c(nout1, nout1b, nout2, nout3) %>% unique()
+  notsolved1 <- c(nout1, nout1b, nout2, nout3) %>% unique() %>% sort()
   
   ## Tests
-  length(notsolved1) == length(unique(out_tab$name)) - length(unique(solved1$name))
-  # tt  <- setdiff(unique(out_tab$name), unique(solved1$name))
+  length(notsolved1) == length(unique(out_tab$sc_name)) - length(unique(solved1$sc_name))
+  # tt  <- setdiff(unique(out_tab$sc_name), unique(solved1$sc_name))
   # tt2 <- setdiff(notsolved1, tt)
   
   
   ## -- STAT2: Numbers after first round of services ------------------------
   stat2 <- rbind(
-    c("Initial number of inputs"  , length(species_cleaned$scientific_name)                           ),
-    c("Unique number of inputs"   , length(unique(species_cleaned$scientific_name))                   ),
-    c("Number of cleaned inputs"  , length(unique(species_cleaned$input_ready))                       ),
-    c("Number of matches"         , solved1 %>% nrow()                                                ),
-    c(" - directly accepted"      , out1 %>% filter(status == "accepted" & fuzzy_dist == 0) %>% nrow()),
-    c(" - accepted with typos"    , out1 %>% filter(status == "accepted" & fuzzy_dist != 0) %>% nrow()),
-    c(" - synonyms"               , out1 %>% filter(status == "synonym") %>% nrow()                   ),
-    c(" - genus only (Tropicos)"  , nrow(out2)                                                        ),
-    c(" - conflicts (LCVP as ref)", nrow(out3)                                                        ),
-    c("Remaining to solve"        , length(notsolved1)                                                )
+    c("Initial number of inputs", length(species_cleaned$scientific_name)                           ),
+    c("Unique number of inputs" , length(unique(species_cleaned$scientific_name))                   ),
+    c("Number of cleaned inputs", length(unique(species_cleaned$input_ready))                       ),
+    c("Number of matches"       , solved1 %>% nrow()                                                ),
+    c(" - directly accepted"    , out1 %>% filter(status == "accepted" & fuzzy_dist == 0) %>% nrow()),
+    c(" - accepted with typos"  , out1 %>% filter(status == "accepted" & fuzzy_dist != 0) %>% nrow()),
+    c(" - synonyms"             , out1 %>% filter(status == "synonym") %>% nrow()                   ),
+    c(" - genus only (Tropicos)", nrow(out2)                                                        ),
+    c(" - conflicts (*)"        , nrow(out3)                                                        ),
+    c("Remaining to solve"      , length(notsolved1)                                                ),
+    c(""                                             , ""),
+    c("(*) first process in stat1 used as reference.", "")
   ) 
   
   stat2 <- tibble(step = stat2[,1], count = stat2[,2])
@@ -489,20 +489,19 @@ species_solve <- function(.path,
   ##
   
   if (length(notsolved1) != 0) {
-    
+
     message("Send remaining issues to Kew Royal Botanical Garden...")
-    
+
     ## Run service
     res_pow <- solve_pow(
-      .taxon      = notsolved1, 
+      .taxon      = notsolved1,
       .save_table = .save_table,
       .filename   = filename
       )
-    
+
     print(table(res_pow$tab$status, useNA = "always"))
-    notsolved_pow <- res_pow$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
-    
-    
+    notsolved_pow <- res_pow$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
+
   }
   
   
@@ -510,7 +509,7 @@ species_solve <- function(.path,
   
   ## Output #################################################################
   
-  out <- list(tab = tab, duration = duration , stat1 = stat1, stat2 = stat2, stat3 = stat3)
+  out <- list(tab = tab, duration = duration , stat1 = stat1, stat2 = stat2)
   
   
   out

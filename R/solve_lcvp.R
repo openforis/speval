@@ -47,8 +47,8 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
 
   
   ## --- Harmonize ---
-  solved_out <- tibble(name = .taxon) %>%
-    left_join(solved_lcvp, by = c("name" = "Submitted_Name")) %>%
+  solved_out <- tibble(sc_name = .taxon) %>%
+    left_join(solved_lcvp, by = c("sc_name" = "Submitted_Name")) %>%
     mutate(
       LCVP_Accepted_Taxon = if_else(Status == "unresolved", NA_character_, LCVP_Accepted_Taxon),
       
@@ -89,7 +89,7 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
         paste(infrasp, infrasp_name, leftover, sep = " ")
       )
     ) %>% 
-    select(name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   
