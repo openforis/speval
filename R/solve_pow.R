@@ -34,29 +34,27 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort()
   #input <- .taxon
   
-  tt <- out_tab %>% filter(name %in% notsolved1)
+  # tt <- out_tab %>% filter(name %in% notsolved1)
   
   ## --- RUN POW ---
   message(paste0("...Running Plant of The World Online"))
   time1 <- Sys.time()
   
-  solved_pow <- vector(mode = "list", length = length(.taxon))
-  for (i in seq_along(solved_pow)) {
-    Sys.sleep(2)
-    solved_pow[[i]] <- taxize::pow_search(.taxon[i])
-  }
-  
+  # solved_pow <- vector(mode = "list", length = length(.taxon))
+  # for (i in seq_along(solved_pow)) {
+  #   Sys.sleep(2)
+  #   x = .taxon[i]
+  #   out <- taxize::pow_search(x)$data
+  #   out$input <- x
+  #   solved_pow[[i]] <- out
+  # }
+
   solved_pow <- map_dfr(.taxon, function(x){
-    
     Sys.sleep(2)
-    x <- "Mariosousa acatlensis"
-    out <- taxize::pow_search(x)
-    out$data
-    
+    out <- taxize::pow_search(x)$data
+    if(!is.null(out)) out$input <- x
+    out
   })
-  
-  
-  solved_pow2 <- bind_rows(solved)
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
@@ -68,7 +66,7 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   
   ## --- Harmonize ---
   solved_tmp <- tibble(name = .taxon) %>%
-    left_join(solved_wfo, by = c("name" = "spec.name")) %>%
+    left_join(solved_pow, by = c("name" = "input")) %>%
     rowwise() %>%
     mutate(fuzzy_recalc = as.numeric(utils::adist(name, scientificName, ignore.case = T))) %>%
     ungroup() %>%

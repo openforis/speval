@@ -70,7 +70,9 @@ species_solve <- function(.path,
   
   
   
+  ##
   ## Check function inputs ##################################################
+  ##
   
   stopifnot(is.character(.path))
   stopifnot(str_ends(.path, "csv"))
@@ -84,7 +86,6 @@ species_solve <- function(.path,
   if (.how_to %in% c("compare", "integrate", "wfo"))      stopifnot(nzchar(system.file(package = "WorldFlora")))
   if (.how_to %in% c("compare", "integrate", "tropicos")) stopifnot(nzchar(system.file(package = "taxize")))
   
-  
   ## Check if reference files for WFO.match() exist
   if (!is.null(.save_table) & .how_to %in% c("compare", "integrate", "wfo_lcvp")) stopifnot(file.exists(.ref_lcvp))
   if (!is.null(.save_table) & .how_to %in% c("compare", "integrate", "wfo"))      stopifnot(file.exists(.ref_wfo))
@@ -94,7 +95,9 @@ species_solve <- function(.path,
   
   
   
-  ## Initiation #############################################################
+  ##
+  ## Prepare data and parameters ############################################
+  ##
   
   ## Get number of cores for multicore sub-functions
   n_cores <- parallel::detectCores() - 1
@@ -116,15 +119,16 @@ species_solve <- function(.path,
     unique()
   
   
+  ##
+  ## Call services round 1 ##################################################
+  ##
   
-  ## Implementation round 1 #################################################
-  
+  ## --- 1a. LCVP() ---------------------------------------------------------
   if (.with_LCVP | .how_to == "lcvp") {
     
-    ## --- 1a. LCVP ---------------------------------------------------------
     if (.how_to %in% c("compare", "integrate", "lcvp")) {
       
-      message("Start LCVP...")
+      message("Start LCVP()...")
       
       ## Select data
       ## --- Data is species_notsolved as this is the first service
@@ -153,10 +157,10 @@ species_solve <- function(.path,
   
   
   
-  ## --- 1b. WFO on LCVP reference data -------------------------------------
+  ## --- 1b. WFO.match() with LCVP backbone ---------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_lcvp") & length(species_notsolved != 0)) {
     
-    message("Start WFO with LCVP reference data...")
+    message("Start WFO.match() with LCVP backbone...")
     
     ## Run service
     res_wfo_lcvp <- solve_wfo(
@@ -183,10 +187,10 @@ species_solve <- function(.path,
   
   
   
-  ## --- 2. WFO on WFO reference data ---------------------------------------
+  ## --- 2. WFO.match() with WFO backbone -----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo") & length(species_notsolved != 0)) {
     
-    message("Start WFO with WFO reference data...")
+    message("Start WFO.match() with WFO backbone...")
     
     ## Run service
     res_wfo <- solve_wfo(
@@ -216,7 +220,7 @@ species_solve <- function(.path,
   ## --- 3. Tropicos --------------------------------------------------------
   if (.how_to %in% c("compare", "integrate", "tropicos") & length(species_notsolved != 0)) {
     
-    message("Start Tropicos...")
+    message("Start gnr_resolve() with Tropicos backbone...")
     
     ## Run service
     res_tropicos <- solve_tropicos(
@@ -240,10 +244,10 @@ species_solve <- function(.path,
   
   
   
-  ## --- 4. WFO on NCBI reference data --------------------------------------
+  ## --- 4. WFO.match() with NCBI backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_ncbi") & length(species_notsolved != 0)) {
     
-    message("Start WFO on NCBI reference data...")
+    message("Start WFO.match() with NCBI backbone...")
     
     ## Run service
     res_ncbi <- solve_wfo(
@@ -270,10 +274,10 @@ species_solve <- function(.path,
   
   
   
-  ## --- 5. WFO on GBIF reference data --------------------------------------
+  ## --- 5. WFO.match() with GBIF backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
-    message("Start WFO on GBIF reference data...")
+    message("Start WFO.match() with GBIF backbone...")
     
     ## Run service
     res_gbif <- solve_wfo(
@@ -300,13 +304,15 @@ species_solve <- function(.path,
   
   
   
+  ##
   ## Analyze results ########################################################
+  ##
   
   message("\n---\nAnalyzing first results.\n---\n")
   
   
   ## !!! For debugging analysis
-  res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2044-resWFO-withlcvp_conv-harmo.csv")   , duration = tibble(process = "lcvp_conv_WFO.match"   , duration_sec = 1000))
+  #res_1 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2044-resWFO-withlcvp_conv-harmo.csv")   , duration = tibble(process = "lcvp_conv_WFO.match"   , duration_sec = 1000))
   res_2 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2109-resWFO-withwfo_backbone-harmo.csv"), duration = tibble(process = "wfo_backbone_WFO.match", duration_sec = 1000))
   res_3 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2116-resWFO-withncbi_conv-harmo.csv")   , duration = tibble(process = "ncbi_conv_WFO.match"   , duration_sec = 1000))
   res_4 <- list(tab = read_csv("results/NFMA_species_mess-2021-08-31-2128-resWFO-withgbif_conv-harmo.csv")   , duration = tibble(process = "gbif_conv_WFO.match"   , duration_sec = 1000))
@@ -364,7 +370,7 @@ species_solve <- function(.path,
   
   ## -- STAT1: nb of records per status and process -------------------------
   service_order <- tibble(
-    process = c("lcvp_LCVP", "lcvp_conv_WFO.match", "wfo_backbone_WFO.match",  "tropicos_gnr_resolve", "ncbi_conv_WFO.match", "gbif_conv_WFO.match"), 
+    process = c("lcvp_LCVP", "lcvp_WFO.match", "wfo_WFO.match",  "tropicos_gnr_resolve", "ncbi_WFO.match", "gbif_WFO.match"), 
     order   = 1:6
   )
   
@@ -388,9 +394,13 @@ species_solve <- function(.path,
   
   
   ## -- Make a table of unique solutions ------------------------------------ 
+  ## First process: if LCVP() in the process use the service after to favor lcvp_WFO.match()
+  first_process <- if_else(.with_lcvp, stat1$process[4], stat1$process[3])
+  
+  
   ## Unique solutions
   out1 <- out_tab %>%
-    filter(result_type == "all services", num_input == num_process, process == "lcvp_conv_WFO.match") %>%
+    filter(result_type == "all services", num_input == num_process, process == first_process) %>%
     select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
 
@@ -400,11 +410,11 @@ species_solve <- function(.path,
     select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
   
-  ## Conflicts between services: take LCVP backbone as reference for accepted and synonyms
-  unique_lcvp <- out_tab %>%
+  ## Conflicts between services: take first process as reference for accepted and synonyms (lcvp_WFO.match() unless specific service is called)
+  unique_firstprocess <- out_tab %>%
     filter(
       result_type %in% c("conflict between services", "conflict intra service"), 
-      process == "lcvp_conv_WFO.match", 
+      process == first_process, 
       status %in% c("accepted", "synonym"),
       num_dup == 1
       ) %>%
@@ -412,20 +422,21 @@ species_solve <- function(.path,
 
   out3_tmp <- out_tab %>%
     filter(result_type  %in% c("conflict between services", "conflict intra service")) %>%
-    mutate(unique_lcvp = if_else(name %in% unique_lcvp, TRUE, FALSE))
+    mutate(unique_firstprocess = if_else(name %in% unique_firstprocess, TRUE, FALSE))
   
-  table(out3_tmp$unique_lcvp)
+  ## Check
+  # table(out3_tmp$unique_lcvp)
   
   out3 <- out3_tmp %>%
-    filter(unique_lcvp, process == "lcvp_conv_WFO.match") %>%
+    filter(unique_firstprocess, process == first_process) %>%
     select(name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     distinct()
   
   ## Combine unique solutions and unsolved
   solved1 <- bind_rows(out1, out2, out3)
   
-  solved1 %>% group_by(name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(name)
-  tt <- out_tab %>% filter(name == "Dolichandrone spathacea")
+  ## Check
+  #solved1 %>% group_by(name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(name)
   
   
   
@@ -434,14 +445,12 @@ species_solve <- function(.path,
   
   nout1  <- out_tab %>% filter(result_type == "no service") %>% 
     pull(name) %>% unique() %>% setdiff(., solved1$name)
-  nout1b <- out_tab %>% filter(result_type == "all services", num_input != num_process, process == "lcvp_conv_WFO.match") %>% ## Author conflict in LCVP backbone
+  nout1b <- out_tab %>% filter(result_type == "all services", num_input != num_process, process == first_process) %>% ## Author conflict in LCVP backbone
     pull(name) %>% unique() 
   nout2  <- out_tab %>% filter(result_type == "genus only", process == "tropicos_gnr_resolve", status != "accepted") %>% 
     pull(name) %>% unique()
-  nout3  <- out3_tmp %>% filter(!unique_lcvp) %>% 
+  nout3  <- out3_tmp %>% filter(!unique_firstprocess) %>% 
     pull(name) %>% unique()
-  # nout4  <- out_tab %>% filter(result_type == "conflict intra service") %>% 
-  #   pull(name) %>% unique()
   
   notsolved1 <- c(nout1, nout1b, nout2, nout3) %>% unique()
   
@@ -475,7 +484,10 @@ species_solve <- function(.path,
   
   
   
-  ## Implementation round 2 #################################################
+  ##
+  ## Call services round 2 ##################################################
+  ##
+  
   if (length(notsolved1) != 0) {
     
     message("Send remaining issues to Kew Royal Botanical Garden...")
@@ -487,8 +499,8 @@ species_solve <- function(.path,
       .filename   = filename
       )
     
-    print(table(res_gbif$tab$status, useNA = "always"))
-    notsolved_kew <- res_kew$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
+    print(table(res_pow$tab$status, useNA = "always"))
+    notsolved_pow <- res_pow$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(name)
     
     
   }

@@ -49,10 +49,10 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   #input <- .taxon
   
   ## Find table name if .path exists
-  ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "WFO_backbone", get_filename(.ref_file)) %>% str_to_lower()
+  ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "wfo", get_filename(.ref_file)) %>% str_remove("_conv")%>% str_to_lower()
   
   ## --- RUN WFO ---
-  message(paste0("...Running WFO with ", ref_filename, " dataset."))
+  message(paste0("...Running WFO with ", ref_filename, " backbone."))
   time1 <- Sys.time()
   
   if (.multicore) {
