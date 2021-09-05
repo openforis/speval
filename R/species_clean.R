@@ -58,7 +58,7 @@ species_clean <- function(.path){
     subform = c("subforma", "subform", "subf", "subfo")
   )
   
-  check_unknown <- c("unknown", "not known", "no listada", "zz", "others")
+  check_unknown <- c("unknown", "not known", "no listada", "zz", "others", "desconocida", "desconocido", "inconnu")
   
   lcvp_smallgenus <- LCVP::tab_lcvp %>% 
     pull(Input.Taxon) %>% 
