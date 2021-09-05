@@ -72,7 +72,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   solved_out <- tibble(name = .taxon) %>%
     left_join(solved_tropicos, by = c("name" = "user_supplied_name")) %>%
     rowwise() %>%
-    mutate(fuzzy_dist = as.numeric(utils::adist(name, matched_name2, ignore.case = T))) %>%
+    mutate(fuzzy_dist = if_else(is.na(matched_name2), 0, as.numeric(utils::adist(name, matched_name2, ignore.case = T)))) %>%
     ungroup() %>%
     mutate(
       fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
