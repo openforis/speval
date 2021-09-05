@@ -37,7 +37,8 @@ library(tidyverse)
 ## General purpose
 #library(utils) ## Automatically loaded when R starts
 
-
+## Options for dplyr::summarise()
+options(dplyr.summarise.inform = FALSE)
 
 ## Admin input (not accessible for shiny users) #############################
 

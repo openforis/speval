@@ -37,6 +37,12 @@ source("global.R")
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Tachigali versi"))
 #LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Acacia mangium"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus kirghisorum"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Malus sieversii"))
+#LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Input.Taxon, "Lonchocarpus phlebophyllus"))
+
+LCVP::tab_lcvp %>% as_tibble() %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
+
 
 
 ## Job setup
