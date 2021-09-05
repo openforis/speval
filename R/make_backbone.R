@@ -16,14 +16,38 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   message("Creating WFO backbone dataset from LCVP::tab_lcvp...")
   time1 <- Sys.time()
   
-  ## Common abbrevaiton for intraspecies
+  ## Common abbreviation for intraspecies
   check_intrasp <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
+  
+  ## Correct few mistakes in LCVP table
+  lcvp_cor <- LCVP::tab_lcvp %>% 
+    as_tibble() %>%
+    mutate(
+      Output.Taxon = case_when(
+        Output.Taxon == "Dalbergia nitidula Baker"             ~ "Dalbergia nitidula Welw. ex Baker",
+        Output.Taxon == "Dolichandrone spathacea (L.f.) Seem." ~ "Dolichandrone spathacea (L.f.) K.Schum.",
+        Output.Taxon == "Manilkara zapota"                     ~ "Manilkara zapota (L.) P.Royen",
+        Output.Taxon == "Poeppigia procera C.Presl"            ~ "Poeppigia procera (Poepp. ex Spreng.) C.Presl",
+        TRUE ~ Output.Taxon
+      ),
+      Status = case_when(
+        Input.Taxon == "Malus sieversii (Ledeb.) M.Roem." ~ "accepted",
+        TRUE ~ Status
+      )
+    )
+  
+  
+  lcvp_cor %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
+  lcvp_cor %>% filter(str_detect(Input.Taxon, "Malus sieversii \\(Ledeb.\\) M.Roem."))
+  lcvp_cor %>% filter(str_detect(Output.Taxon, "Dolichandrone spathacea"))
+  lcvp_cor %>% filter(str_detect(Output.Taxon, "Manilkara zapota"))
+  tt <- lcvp_cor %>% filter(str_detect(Output.Taxon, "Poeppigia procera"))
   
   ## Check missing Output.Taxon in Input.Taxon
   ## Need to remove unresolved and external status then check for incomplete genus name and missing author name. 
   ## Keep only taxa with author name to be conservative.
-  lcvp_out <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique()
-  lcvp_in  <- LCVP::tab_lcvp %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique()
+  lcvp_out <- lcvp_cor %>% filter(Status != "unresolved", Status != "external") %>% pull(Output.Taxon) %>% unique()
+  lcvp_in  <- lcvp_cor %>% filter(Status != "unresolved", Status != "external") %>% pull(Input.Taxon) %>% unique()
   
   lcvp_add <- tibble(sp_add = lcvp_out[is.na(match(lcvp_out, lcvp_in))]) %>%
     mutate(
@@ -58,7 +82,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
     select(Input.Taxon, Status, PL.comparison, PL.alternative, Output.Taxon, Family, Order)
   
   ## Address 1. and 2.
-  data_lcvp1 <- LCVP::tab_lcvp %>% 
+  data_lcvp1 <- lcvp_cor %>% 
     as_tibble() %>%
     bind_rows(lcvp_add) %>%
     arrange(Input.Taxon) %>%
@@ -117,7 +141,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t")
   
   ## !!! Remove tmp objects
-  rm(check_intrasp, lcvp_in, lcvp_out, lcvp_add, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
+  rm(check_intrasp, lcvp_cor, lcvp_in, lcvp_out, lcvp_add, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
   ## !!!
   
   time2 <- Sys.time()
@@ -175,10 +199,14 @@ if (!(wfo_backbone_gbif %in% list.files(recursive = T))) {
   ## Download a local copy of the data if necessary
   taxadb::td_create("gbif", version = "2020", overwrite = F)
   
-  ## Check status
-  taxa_tbl("gbif", version = "2020") %>% pull(taxonomicStatus) %>% unique()
-  taxa_tbl("gbif", version = "2020") %>% filter(kingdom == "Plantae") %>% pull(phylum) %>% unique()
-  taxa_tbl("gbif", version = "2020") %>% filter(scientificName == "Acacia mangium")
+  ## Check backbone reference errors 
+  # taxa_tbl("gbif", version = "2020") %>% filter(scientificName == "Mimosa platycarpa")
+  # taxa_tbl("gbif", version = "2020") %>% filter(taxonID == "GBIF:7628219")
+  # taxa_tbl("gbif", version = "2020") %>% filter(taxonID == "GBIF:2969333")
+  # taxa_tbl("gbif", version = "2020") %>% filter(scientificName == "Pausinystalia yohimba")
+  # taxa_tbl("gbif", version = "2020") %>% filter(taxonID == "GBIF:3848388")
+  # taxa_tbl("gbif", version = "2020") %>% filter(scientificName == "Pausinystalia yohimba")
+  # taxa_tbl("gbif", version = "2020") %>% filter(taxonID == "GBIF:3848388")
   
   ## Make backbone
   gbif_tab <- taxa_tbl("gbif", version = "2020") %>% 
