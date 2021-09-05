@@ -313,11 +313,11 @@ species_solve <- function(.path,
   time1 <- Sys.time()
   
   ## !!! For debugging analysis
-  #res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1718-resWFO-withlcvp-harmo.csv"), duration = tibble(process = "lcvp_WFO.match"      , duration_sec = 1000))
-  res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1720-resWFO-withwfo-harmo.csv") , duration = tibble(process = "wfo_WFO.match"       , duration_sec = 1000))
-  res_3 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1721-resWFO-withncbi-harmo.csv"), duration = tibble(process = "ncbi_WFO.match"      , duration_sec = 1000))
-  res_4 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1723-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match"      , duration_sec = 1000))
-  res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1721-resTropicos-harmo.csv")    , duration = tibble(process = "tropicos_gnr_resolve", duration_sec = 1000))
+  res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1955-resWFO-withlcvp-harmo.csv"), duration = tibble(process = "lcvp_WFO.match", duration_sec = 1000))
+  res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resTropicos-harmo.csv"    , col_types = cols(score = col_character())), duration = tibble(process = "tropicos_gnr_resolve", duration_sec = 1000))
+  res_3 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resWFO-withwfo-harmo.csv" ), duration = tibble(process = "wfo_WFO.match" , duration_sec = 1000))
+  res_4 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1959-resWFO-withncbi-harmo.csv"), duration = tibble(process = "ncbi_WFO.match", duration_sec = 1000))
+  res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-2000-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match", duration_sec = 1000))
   ## !!!
   
   
@@ -488,9 +488,10 @@ species_solve <- function(.path,
   ## Call services round 2 ##################################################
   ##
   
+  ## --- pow_search() on remaining not solved -------------------------------
   if (length(notsolved1) != 0) {
 
-    message("Send remaining issues to Kew Royal Botanical Garden...")
+    message("Send remaining issues to Kew Plants of the World Online...")
 
     ## Run service
     res_pow <- solve_pow(
@@ -504,8 +505,28 @@ species_solve <- function(.path,
 
   }
   
+  ## --- Make final output table --------------------------------------------
+  out_tab2 <- res_pow$tab %>% 
+    mutate(
+      num_input   = 1,
+      num_taxon   = 1,
+      num_dup     = 1,
+      result_type = "POW validation"
+      ) %>%
+    bind_rows(out_tab, .)
+  
+  species_final <- res_pow$tab %>%
+    select(sc_name, accepted_name, accepted_author, status, fuzzy_dist) %>%
+    bind_rows(solved1, .)
+  
+  nrow(species_final) == length(unique(species_cleaned$input_ready))
   
   
+  
+  ## --- Add Global Tree Search status --------------------------------------
+  
+  
+  ## --- Add IUCN status ----------------------------------------------------
   
   ## Output #################################################################
   
