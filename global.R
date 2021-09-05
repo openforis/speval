@@ -55,15 +55,30 @@ wfo_file <- file.path(path_data, "classification.txt")
 ## Path to backbone from LCVP
 wfo_backbone_lcvp <- file.path(path_data, "LCVP_conv.txt")
 
-## Path to backbone from GTS
-## !!! To Be Done: GTS used to check in accepted names from other sources are included, not to correct submitted species lists.
-
 ## Path to backbone from NCBI 2020 (2021 not working)
 wfo_backbone_ncbi <- file.path(path_data, "NCBI_conv.txt")
 
-## Path to backbone from NCBI 2020 (2021 not working)
+## Path to backbone from GBIF 2020 (2021 not working)
 wfo_backbone_gbif <- file.path(path_data, "GBIF_conv.txt")
 
+## Path to backbone from GTS
+gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
+
+## Path to IUCN check list
+## !!! When running this script for the first time, you will need to manually download the IUCN summary status for Plantae/Tracheophyta
+## For more details, see make_backbone script, section 4: IUCN checklist
+## Directions:
+## - Go to: https://www.iucnredlist.org/
+## - Create an account/login
+## - Go to advanced search
+## - Filter by:
+##    + Type: species
+##    + Taxonomy: filter  Plantae > Tracheophyta
+##    + include Species, Subspecies and varieties, Subpopulations
+## - Download search summary. 
+## - Find zip when file.choose() called
+## !!!
+iucn_checklist <- file.path(path_data, "iucn_checklist.csv")
 
 
 ## Create paths plus directories to data and results ########################
