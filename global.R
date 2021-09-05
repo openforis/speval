@@ -85,6 +85,8 @@ source("R/solve_wfo.R", local = T)
 
 source("R/solve_tropicos.R", local = T)
 
+source("R/solve_pow.R", local = T)
+
 source("R/species_solve.R", local = T)
 
 
