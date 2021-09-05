@@ -40,7 +40,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   input <- .taxon
   
   ## --- RUN LCVP ---
-  message("...Running Tropicos - Missouri Botanical Garden.")
+  message("...Sending to https://resolver.globalnames.org/")
   time1 <- Sys.time()
   
   # solved_tropicos <- taxize::gnr_resolve(input, data_source_ids = .gnr_src)

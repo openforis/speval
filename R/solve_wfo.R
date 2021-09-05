@@ -52,7 +52,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   ref_filename <- if_else(str_detect(.ref_file, "classification.txt"), "wfo", get_filename(.ref_file)) %>% str_remove("_conv")%>% str_to_lower()
   
   ## --- RUN WFO ---
-  message(paste0("...Running WFO with ", ref_filename, " backbone."))
+  message(paste0("...Running WFO.match() with ", ref_filename, " backbone."))
   time1 <- Sys.time()
   
   if (.multicore) {
@@ -156,7 +156,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
       !(count > 1 & has_accepted == TRUE & status != "accepted"),
       !(count > 1 & has_accepted == FALSE & has_synonym == TRUE & status != "synonym")
       ) %>%
-    select(sc_name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+    select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
     distinct()
   ## ---
   
