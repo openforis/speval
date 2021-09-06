@@ -47,6 +47,8 @@
 ## ---                 Data comes from taxadb, may not be the latest version.
 ## ---  .ref_gbif    : NULL or path to file GBIF backbone for WFO.match(). Required when all services or "wfo_gbif" are used. 
 ## ---                 Data comes from taxadb, may not be the latest version.
+## ---  .ref_gts     : NULL or path to Global Tree Search
+## ---  .ref_iucn    : NULL or path to IUCN red list (manual download by user or shinyapp admin)
 
 species_solve <- function(.path, 
                           .how_to     = "wfo_lcvp", 
@@ -55,28 +57,27 @@ species_solve <- function(.path,
                           .multicore  = TRUE,
                           .ref_lcvp   = NULL, 
                           .ref_wfo    = NULL, 
-                          .ref_gts    = NULL, 
                           .ref_ncbi   = NULL, 
                           .ref_gbif   = NULL, 
-                          .gts        = NULL, 
+                          .ref_gts    = NULL,
+                          .ref_iucn   = NULL,
                           .tx_src     = NULL) {
   
   time_start <- Sys.time()
   
   message("\n---\nInitiating Taxonomic Resolution.\n---\n")
   
-  # write_file(x = "print(1+1)", file = "demo/test.R")
-  # rstudioapi::jobRunScript("demo/test.R", "test", workingDir = getwd(), importEnv = T, exportEnv = "R_GlobalEnv")
   
   
+  ## ************************************************************************
   
-  ##
-  ## Check function inputs ##################################################
-  ##
+  ## Check function inputs --------------------------------------------------
+  
+  ## ************************************************************************
   
   stopifnot(is.character(.path))
   stopifnot(str_ends(.path, "csv"))
-  stopifnot(.how_to %in% c("compare", "integrate", "lcvp", "wfo_lcvp", "wfo", "tropicos"))
+  stopifnot(.how_to %in% c("compare", "integrate", "lcvp", "wfo_lcvp", "wfo", "wfo_gbif", "wfo_ncbi", "tropicos"))
   stopifnot(is.logical(.multicore))
   
   ## Check if packages installed (https://stackoverflow.com/questions/9341635/check-for-installed-packages-before-running-install-packages)
@@ -95,9 +96,12 @@ species_solve <- function(.path,
   
   
   
-  ##
-  ## Prepare data and parameters ############################################
-  ##
+  ## ************************************************************************
+  
+  ## Prepare data and parameters --------------------------------------------
+  
+  ## ************************************************************************
+  
   
   ## Get number of cores for multicore sub-functions
   n_cores <- parallel::detectCores() - 1
@@ -119,11 +123,16 @@ species_solve <- function(.path,
     unique()
   
   
-  ##
-  ## Call services round 1 ##################################################
-  ##
   
-  ## --- 1a. LCVP() ---------------------------------------------------------
+  ## ************************************************************************
+  
+  ## Solve taxonomic names --------------------------------------------------
+  
+  ## ************************************************************************
+  
+  
+  ## *** 1a. LCVP() ---------------------------------------------------------
+  
   if (.with_lcvp | .how_to == "lcvp") {
     
     if (.how_to %in% c("compare", "integrate", "lcvp")) {
@@ -156,8 +165,8 @@ species_solve <- function(.path,
   } ## End if .with_lcvp
   
   
+  ## *** 1b. WFO.match() with LCVP backbone ---------------------------------
   
-  ## --- 1b. WFO.match() with LCVP backbone ---------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_lcvp") & length(species_notsolved != 0)) {
     
     message("Start WFO.match() with LCVP backbone...")
@@ -186,8 +195,8 @@ species_solve <- function(.path,
   } ## End if WFO on LCVP
   
   
+  ## *** 2. WFO.match() with WFO backbone -----------------------------------
   
-  ## --- 2. WFO.match() with WFO backbone -----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo") & length(species_notsolved != 0)) {
     
     message("Start WFO.match() with WFO backbone...")
@@ -216,8 +225,8 @@ species_solve <- function(.path,
   } ## End if WFO
   
   
+  ## *** 3. Tropicos --------------------------------------------------------
   
-  ## --- 3. Tropicos --------------------------------------------------------
   if (.how_to %in% c("compare", "integrate", "tropicos") & length(species_notsolved != 0)) {
     
     message("Start gnr_resolve() with Tropicos backbone...")
@@ -244,7 +253,7 @@ species_solve <- function(.path,
   
   
   
-  ## --- 4. WFO.match() with NCBI backbone ----------------------------------
+  ## *** 4. WFO.match() with NCBI backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_ncbi") & length(species_notsolved != 0)) {
     
     message("Start WFO.match() with NCBI backbone...")
@@ -274,7 +283,7 @@ species_solve <- function(.path,
   
   
   
-  ## --- 5. WFO.match() with GBIF backbone ----------------------------------
+  ## *** 5. WFO.match() with GBIF backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
     message("Start WFO.match() with GBIF backbone...")
@@ -304,25 +313,28 @@ species_solve <- function(.path,
   
   
   
-  ##
-  ## Analyze results ########################################################
-  ##
+  ## ************************************************************************
+  
+  ## Analyze results --------------------------------------------------------
+  
+  ## ************************************************************************
+  
   
   ## !!! For debugging analysis
-  res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1955-resWFO-withlcvp-harmo.csv"), duration = tibble(process = "lcvp_WFO.match", duration_sec = 1000))
-  res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resTropicos-harmo.csv"    , col_types = cols(score = col_character())), duration = tibble(process = "tropicos_gnr_resolve", duration_sec = 1000))
-  res_3 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resWFO-withwfo-harmo.csv" ), duration = tibble(process = "wfo_WFO.match" , duration_sec = 1000))
-  res_4 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1959-resWFO-withncbi-harmo.csv"), duration = tibble(process = "ncbi_WFO.match", duration_sec = 1000))
-  res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-2000-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match", duration_sec = 1000))
+  # res_1 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1955-resWFO-withlcvp-harmo.csv"), duration = tibble(process = "lcvp_WFO.match", duration_sec = 1000))
+  # res_2 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resTropicos-harmo.csv"    , col_types = cols(score = col_character())), duration = tibble(process = "tropicos_gnr_resolve", duration_sec = 1000))
+  # res_3 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1958-resWFO-withwfo-harmo.csv" ), duration = tibble(process = "wfo_WFO.match" , duration_sec = 1000))
+  # res_4 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-1959-resWFO-withncbi-harmo.csv"), duration = tibble(process = "ncbi_WFO.match", duration_sec = 1000))
+  # res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-2000-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match", duration_sec = 1000))
   ## !!!
   
-  message("\n---\nAnalyzing first results.\n---\n")
+  message("\n---\nAnalyzing results.\n---\n")
   
   time1 <- Sys.time()
   
   
+  ## *** Combine results ----------------------------------------------------
   
-  ## -- Combine results -----------------------------------------------------
   tab         <- mget(ls(pattern = "res_")) %>% map_dfr(., 1)
   duration    <- mget(ls(pattern = "res_")) %>% map_dfr(., 2)
   num_process <- length(unique(tab$process))
@@ -369,8 +381,11 @@ species_solve <- function(.path,
   
   write_csv(out_tab, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-results.csv")))
   
+  rm(count_input, count_taxon, count_dup)
   
-  ## -- STAT1: nb of records per status and process -------------------------
+  
+  ## *** STAT1: nb of records per status and process ------------------------
+  
   service_order <- tibble(
     process = c("lcvp_LCVP", "lcvp_WFO.match", "wfo_WFO.match",  "tropicos_gnr_resolve", "ncbi_WFO.match", "gbif_WFO.match"), 
     order   = 1:6
@@ -395,7 +410,8 @@ species_solve <- function(.path,
   write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
   
   
-  ## -- Make a table of unique solutions ------------------------------------ 
+  ## *** Regroup unique solutions ------------------------------------------- 
+  
   ## First process: if LCVP() in the process use the service after to favor lcvp_WFO.match()
   first_process <- if_else(.with_lcvp, stat1$process[4], stat1$process[3])
   
@@ -434,14 +450,16 @@ species_solve <- function(.path,
     distinct()
   
   ## Combine unique solutions and unsolved
-  solved1 <- bind_rows(out1, out2, out3)
+  species_solved <- bind_rows(out1, out2, out3)
   
   ## Check
   #solved1 %>% group_by(sc_name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(sc_name)
   
+  rm(out1, out2, out3, out3_tmp, unique_firstprocess)
   
   
-  ## -- Combine remaining unsolved ------------------------------------------
+  ## *** Regroup remaining unsolved -----------------------------------------
+  
   nout1  <- out_tab %>% filter(result_type == "no service") %>% 
     pull(sc_name) %>% unique() %>% setdiff(., solved1$sc_name)
   nout1b <- out_tab %>% filter(result_type == "all services", num_input != num_process, process == first_process) %>% ## Author conflict in LCVP backbone
@@ -451,18 +469,18 @@ species_solve <- function(.path,
   nout3  <- out3_tmp %>% filter(!unique_firstprocess) %>% 
     pull(sc_name) %>% unique()
   
-  notsolved1 <- c(nout1, nout1b, nout2, nout3) %>% unique() %>% sort()
+  species_notsolved <- c(nout1, nout1b, nout2, nout3) %>% unique() %>% sort()
   
   ## Tests
-  length(notsolved1) == length(unique(out_tab$sc_name)) - length(unique(solved1$sc_name))
-  # tt  <- setdiff(unique(out_tab$sc_name), unique(solved1$sc_name))
-  # tt2 <- setdiff(notsolved1, tt)
+  length(species_notsolved) == length(unique(out_tab$sc_name)) - length(unique(species_solved$sc_name))
   
+  rm(nout1, nout1b, nout2, nout3)
   
-  ## -- STAT2: Numbers after first round of services ------------------------
+  ## *** STAT2: Numbers after first round of services -----------------------
+  
   stat2 <- rbind(
-    c("Initial number of inputs", length(species_cleaned$input_name)                           ),
-    c("Unique number of inputs" , length(unique(species_cleaned$input_name))                   ),
+    c("Initial number of inputs", length(species_cleaned$input_name)                                ),
+    c("Unique number of inputs" , length(unique(species_cleaned$input_name))                        ),
     c("Number of cleaned inputs", length(unique(species_cleaned$input_ready))                       ),
     c("Number of matches"       , solved1 %>% nrow()                                                ),
     c(" - directly accepted"    , out1 %>% filter(status == "accepted" & fuzzy_dist == 0) %>% nrow()),
@@ -473,23 +491,29 @@ species_solve <- function(.path,
     c("Remaining to solve"      , length(notsolved1)                                                ),
     c(""                                             , ""),
     c("(*) first process in stat1 used as reference.", "")
-  ) 
+  )
   
   stat2 <- tibble(step = stat2[,1], count = stat2[,2])
   
-  write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))
+  ## Save later
+  # write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Round 1 analysis: ", length(notsolved1), " inputs remaining to solve - ", dt, " sec."))
+  message(paste0("...Analysis done: ", length(notsolved1), " inputs remaining to solve - ", dt, " sec."))
+  
+  rm(duration, num_process)
   
   
   
-  ##
-  ## Call services round 2 ##################################################
-  ##
+  ## ************************************************************************
+
+  ## Solve remaining unknowns and validate ----------------------------------
   
-  ## --- pow_search() on remaining not solved -------------------------------
+  ## ************************************************************************
+  
+  
+  ## *** pow_search() on remaining not solved -------------------------------
   if (length(notsolved1) != 0) {
 
     message("Send remaining issues to Kew Plants of the World Online...")
@@ -507,138 +531,197 @@ species_solve <- function(.path,
   }
   
   
+  ## *** Prepare Global Tree Search status ----------------------------------
   
-  ## --- Prepare Global Tree Search status ----------------------------------
-  gts <- read_csv(gts_file, show_col_types = F) %>% 
-    select(TaxonName, Author)
+  if (!is.null(.ref_gts)) {
+    
+    gts <- read_csv(.ref_gts, show_col_types = F) %>% 
+      select(TaxonName, Author)
+    
+    ## Correct utf-8 character in author name for Windows
+    if (Sys.info()[["sysname"]] == "Windows" & "UTF-8" %in% unique(Encoding(gts$Author))) {
+      gts$Author <- enc2utf8(gts$Author)
+      Encoding(gts$Author) <- "unknown"
+    }
+    
+    gts_taxon <- gts %>%
+      mutate(
+        name_search  = paste0(TaxonName, "---", Author),
+        is_gts_taxon = TRUE) %>%
+      select(name_search, is_gts_taxon)
+    
+    gts_name <- gts %>%
+      select(accepted_name = TaxonName) %>%
+      distinct() %>%
+      mutate(is_gts_name = TRUE)
+    
+    gts_genus <- gts %>%
+      mutate(
+        accepted_genus = word(TaxonName),
+        is_gts_genus = TRUE
+      ) %>%
+      select(accepted_genus, is_gts_genus) %>%
+      distinct()
+    
+    gts_codes <- tibble(
+      gts_num   = 1:4, 
+      gts_match = c("Taxonomic name and author", "Taxonomic name", "Genus level", "Not in Global Tree Search")
+    )
+    
+  } ## End if .ref_gts
   
-  ## Correct utf-8 character in author name for Windows
-  if (Sys.info()[["sysname"]] == "Windows" & "UTF-8" %in% unique(Encoding(gts$Author))) {
-    gts$Author <- enc2utf8(gts$Author)
-    Encoding(gts$Author) <- "unknown"
+  
+  
+  ## *** Prepare IUCN red list status ---------------------------------------
+  
+  if(!is.null(.ref_iucn)) {
+    
+    ## Red list codes: ND added by Lauri, no data (!= not evaluated)
+    iucn_codes <- tibble(
+      iucn_num   = 0:9,
+      iucn_code  = c("ND", "NE", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX"), 
+      iucn_label = c("Not in Red List", "Not Evaluated", "Data Deficient", "Least Concern", 
+                     "Near Threatened", "Vulnerable",  "Endangered", "Critically Endangered", 
+                     "Extinct in the Wild", "Extinct")
+    )
+    
+    iucn <- read_csv(.ref_iucn, show_col_types = F)
+    
   }
   
-  gts_taxon <- gts %>%
+  
+  
+  ## ************************************************************************
+  
+  ## Final species lists ----------------------------------------------------
+  
+  ## ************************************************************************
+  
+  ## *** Make final species list --------------------------------------------
+  
+  message("\n---\nMaking final species lists.\n---\n")
+  
+  tab_final <- solved_pow$tab %>%
     mutate(
-      name_search  = paste0(TaxonName, "---", Author),
-      is_gts_taxon = TRUE) %>%
-    select(name_search, is_gts_taxon)
-  
-  gts_name <- gts %>%
-    select(accepted_name = TaxonName) %>%
-    distinct() %>%
-    mutate(is_gts_name = TRUE)
-  
-  gts_genus <- gts %>%
-    mutate(
-      accepted_genus = word(TaxonName),
-      is_gts_genus = TRUE
-    ) %>%
-    select(accepted_genus, is_gts_genus) %>%
-    distinct()
-  
-  gts_codes <- tibble(
-    gts_num   = 1:4, 
-    gts_match = c("Taxonomic name and author", "Taxonomic name", "Genus level", "Not in Global Tree Search")
-    )
-  
-  ## --- Prepare IUCN red list status ---------------------------------------
-  ## Red list codes: ND added by Lauri, no data (!= not evaluated)
-  iucn_codes <- tibble(
-    iucn_num   = 0:9,
-    iucn_code  = c("ND", "NE", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX"), 
-    iucn_label = c("Not in Red List", "Not Evaluated", "Data Deficient", "Least Concern", 
-                   "Near Threatened", "Vulnerable",  "Endangered", "Critically Endangered", 
-                   "Extinct in the Wild", "Extinct")
-  )
-  
-  iucn <- read_csv(iucn_checklist, show_col_types = F)
-  
-  
-  
-  ## --- Make final species list --------------------------------------------
-  # out_tab2 <- solved_pow$tab %>% 
-  #   mutate(
-  #     num_input   = 1,
-  #     num_taxon   = 1,
-  #     num_dup     = 1,
-  #     result_type = "POW validation"
-  #     ) %>%
-  #   bind_rows(out_tab, .)
-  
+      num_input   = 1,
+      num_taxon   = 1,
+      num_dup     = 1,
+      result_type = "POW validation"
+      ) %>%
+    bind_rows(out_tab, .)
+
   species_final <- solved_pow$tab %>%
     select(sc_name, accepted_name, accepted_author, status, fuzzy_dist) %>%
     bind_rows(solved1, .) %>%
     
     ## Add submitted names
-    left_join(species_cleaned, ., by = c("input_ready" = "sc_name")) %>%
+    left_join(species_cleaned %>% select(scientific_name = input_name, sc_name = input_ready), ., by = "sc_name") %>%
+    mutate(status = if_else(is.na(status), "not submitted", status)) %>%
     
     ## Add GTS matches
-    mutate(
-      accepted_genus = word(accepted_name), 
-      name_search    = paste0(accepted_name, "---", accepted_author)
-      ) %>%
-    left_join(gts_taxon, by = "name_search") %>%
-    left_join(gts_name, by = "accepted_name") %>%
-    left_join(gts_genus, by = "accepted_genus") %>%
-    mutate(across(starts_with("is_gts"), ~if_else(is.na(.x), FALSE, .x))) %>%
-    mutate(
-      gts_num = case_when(
-        is_gts_taxon ~ 1,
-        is_gts_name  ~ 2,
-        is_gts_genus ~ 3,
-        TRUE         ~ 4
-      )
-    ) %>%
-    left_join(gts_codes, by = "gts_num") %>%
-    select(-starts_with("is_gts"), name_search) %>%
+    { 
+      if (!is.null(.ref_gts)) { 
+        . %>%
+          mutate(
+            accepted_genus = word(accepted_name), 
+            name_search    = paste0(accepted_name, "---", accepted_author)
+          ) %>%
+          left_join(gts_taxon, by = "name_search") %>%
+          left_join(gts_name, by = "accepted_name") %>%
+          left_join(gts_genus, by = "accepted_genus") %>%
+          mutate(across(starts_with("is_gts"), ~if_else(is.na(.x), FALSE, .x))) %>%
+          mutate(
+            gts_num = case_when(
+              is_gts_taxon ~ 1,
+              is_gts_name  ~ 2,
+              is_gts_genus ~ 3,
+              TRUE         ~ 4
+            )
+          ) %>%
+          left_join(gts_codes, by = "gts_num") %>%
+          select(-starts_with("is_gts"), name_search)
+      } else { . }
+    } %>%
     
     ## Add IUCN status
-    left_join(iucn %>% select(sc_name, iucn_id = id, iucn_code), by = c("accepted_name" = "sc_name")) %>%
-    mutate(iucn_code = if_else(is.na(iucn_code), "ND", iucn_code)) %>%
-    left_join(iucn_codes, by = "iucn_code")
+    {
+      if (!is.null(.ref_iucn)) {
+        . %>%
+          left_join(iucn %>% select(sc_name, iucn_id = id, iucn_code), by = c("accepted_name" = "sc_name")) %>%
+          mutate(iucn_code = if_else(is.na(iucn_code), "ND", iucn_code)) %>%
+          left_join(iucn_codes, by = "iucn_code")
+      } else { . }
+    }
+
   
   ## Check
   nrow(species_final) == length(unique(species_cleaned$input_name))
   
   
+  ## *** Update STAT2 -------------------------------------------------------
   
-  ## --- STAT3: tables ------------------------------------------------------
-  table(species_final$status)
-  table(species_final$iucn_label)
-  table(species_final$gts_match)
+  stat2.1 <- stat2 %>% slice_head(n = nrow(stat2) - 2) %>%
+    bind_rows(list(step = "Solved with POW", count = solved_pow$tab %>% filter(status %in% c("accepted", "synonym")) %>% nrow() %>% as.character())) %>%
+    bind_rows(list(step = "Remaining unsolved", count = solved_pow$tab %>% filter(status == "not found") %>% nrow() %>% as.character())) %>%
+    bind_rows(stat2 %>% slice_tail(n = 2))
   
+  
+  ## *** STAT3: tables ------------------------------------------------------
+  
+  # table(species_final$status)
+  # table(species_final$iucn_label)
+  # table(species_final$gts_match)
+  # 
   stat3a <- species_final %>% 
-    mutate(status = factor(status, levels = c("accepted", "synonym", "not found"))) %>% 
+    mutate(status = factor(status, levels = c("accepted", "synonym", "not found", "not submitted"))) %>% 
     group_by(status) %>% 
     summarise(status_count  = n()) %>%
-    mutate(sep1 = NA)
+    mutate(`-` = NA)
   
-  stat3b <- species_final %>% 
-    mutate(iucn_label = fct_reorder(iucn_label, iucn_num)) %>% 
-    group_by(iucn_label) %>% 
-    summarise(iucn_count  = n()) %>%
-    mutate(sep2 = NA)
+  if (!is.null(.ref_iucn)) {
+    stat3b <- species_final %>% 
+      mutate(iucn_label = fct_reorder(iucn_label, iucn_num)) %>% 
+      group_by(iucn_label) %>% 
+      summarise(iucn_count  = n()) %>%
+      mutate(`--` = NA)
+  } else {
+    stat3b <- tibble(iucn_label = NA, `--` = NA)
+  }
   
-  stat3c <- species_final %>% 
-    mutate(gts_match = fct_reorder(gts_match, gts_num)) %>% 
-    group_by(gts_match) %>% 
-    summarise(gts_count  = n())
-  
+  if (!is.null(.ref_gts)) {
+    stat3c <- species_final %>% 
+      mutate(gts_match = fct_reorder(gts_match, gts_num)) %>% 
+      group_by(gts_match) %>% 
+      summarise(gts_count  = n())
+  } else {
+    stat3c <- tibble(gts_match = NA)
+  }
   
   stat3 <- stat3a %>% rownames_to_column() %>%
     full_join(stat3b %>% rownames_to_column(), by = "rowname") %>%
     full_join(stat3c %>% rownames_to_column(), by = "rowname") %>%
+    select(-rowname) %>%
     mutate(across(everything(), as.character)) %>%
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
   
   write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat3.csv")))
   
   
-  ## Output #################################################################
+  ## ************************************************************************
   
-  out <- list(tab = tab, duration = duration , stat1 = stat1, stat2 = stat2, stat3 = stat3)
+  ## Output -----------------------------------------------------------------
   
+  ## ************************************************************************
+  time_start <- Sys.time()
+  time_end <- Sys.time() + 10000
+  dt       <- round(as.numeric(time_end-time_start, units = "secs"))
+  hh       <- trunc(dt / 3600)
+  mm       <- trunc(dt / 60) - hh * 60
+  ss       <- dt - hh * 3600 - mm * 60
+  
+  message(paste0("\n---\nTaxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec.\n---\n"))
+  
+  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3)
   out
   
 } ## End function species_solve()
