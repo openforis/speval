@@ -103,9 +103,9 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
-    write_csv(solved_tropicos, paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resTropicos.csv"))
-    write_csv(solved_out     , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resTropicos-harmo.csv"))
-    write_tsv(tibble(NULL)   , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resTropicos-", dt,"-secs.txt"))
+    write_csv(solved_tropicos, paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos.csv"))
+    write_csv(solved_out     , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos-harmo.csv"))
+    write_tsv(tibble(NULL)   , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos-", dt,"-secs.txt"))
   }
   
   ## Output

@@ -8,20 +8,16 @@
 ## - data frames with input and solved names
 ## - data frame with summary stats on the process
 
-## Order for Species solve:
-# 1) The Leipzig Catalogue of Vascular Plant [offline]
-# 2) Tropicos - Missouri Botanical Garden [online]
-# 3) Kew  - Plants of the World Online [online]
+## Order for Species solve services:
+# 1) The Leipzig Catalogue of Vascular Plant [offline] - as backbone to WFO.match() - LCVP() can be opted in.
+# 2) WFO  - WorldFlora Online [offline]
+# 3) Tropicos - Missouri Botanical Garden [online]
 # 4) NCBI - National Center for Biotechnology Information, db="taxonomy" [online]
-# 5) WFO  - WorldFlora Online [offline]
-# 6) GBIF - Global Biodiversity Information Facility [online]
-# additional information:
-# 7) GBIF - IUCN Red List search [online], (no results for all species!)
-# 8) GlobalTreeSearch [offline]. (Used to check names occur in this DB, not  actually to validate names)
-
-## Description of services
-
-
+# 5) GBIF - Global Biodiversity Information Facility [online]
+# Validation- additional information:
+# 6) Kew  - Plants of the World Online [online]
+# 7) GBIF - IUCN Red List search [offline] - Manual download
+# 8) GlobalTreeSearch [offline] - Manual download
 
 ## --- Function parameters:
 ## ---  .path: path to species list to solve
@@ -661,8 +657,8 @@ species_solve <- function(.path,
   nrow(species_final) == length(unique(species_cleaned$input_name))
   
   
-  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-detailed-species.csv")))
-  write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-species.csv")))
+  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-detailed-species.csv")))
+  write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species.csv")))
   
   
   ## *** Update STAT2 -------------------------------------------------------
@@ -712,9 +708,9 @@ species_solve <- function(.path,
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
   
   ## Save stat tables
-  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
-  write_csv(stat2.1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))
-  write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat3.csv")))
+  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat1.csv")))  
+  write_csv(stat2.1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat2.csv")))
+  write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat3.csv")))
   
   
   

@@ -162,18 +162,9 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
-    write_csv(solved_wfo, 
-              paste0(.save_table, "/", .filename, "-" , 
-                     format(Sys.time(), format = "%Y-%m-%d-%H%M"), 
-                     "-resWFO-with", ref_filename, ".csv"))
-    write_csv(solved_out, 
-              paste0(.save_table, "/", .filename, "-" , 
-                     format(Sys.time(), format = "%Y-%m-%d-%H%M"), 
-                     "-resWFO-with", ref_filename, "-harmo.csv"))
-    write_tsv(tibble(NULL), 
-              paste0(.save_table, "/", .filename, "-", 
-                     format(Sys.time(), format = "%Y-%m-%d-%H%M"), 
-                     "-resWFO-with", ref_filename, "-", dt,"-secs.txt"))
+    write_csv(solved_wfo , paste0(.save_table, "/", .filename, "-" , format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resWFO-with", ref_filename, ".csv"))
+    write_csv(solved_out , paste0(.save_table, "/", .filename, "-" , format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resWFO-with", ref_filename, "-harmo.csv"))
+    write_tsv(tibble(NULL), paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resWFO-with", ref_filename, "-", dt,"-secs.txt"))
   }
   
   ## Output

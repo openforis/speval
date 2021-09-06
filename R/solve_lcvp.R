@@ -95,9 +95,9 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
-    write_csv(solved_lcvp , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP.csv"))
-    write_csv(solved_out  , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-harmo.csv"))
-    write_tsv(tibble(NULL), paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-resLCVP-", dt,"-secs.txt"))
+    write_csv(solved_lcvp , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resLCVP.csv"))
+    write_csv(solved_out  , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resLCVP-harmo.csv"))
+    write_tsv(tibble(NULL), paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resLCVP-", dt,"-secs.txt"))
   }
   
   ## Output
