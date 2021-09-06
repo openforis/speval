@@ -13,7 +13,8 @@ source("global.R")
 
 ## Job setup
 #iFile  <- "demo/NFMA_species_mess.csv"
-iFile  <- "demo/NFMA_species_clean100.csv"
+#iFile  <- "demo/NFMA_species_clean100.csv"
+iFile  <- "demo/test_subset_alder.csv" 
 how_to <- "compare"
 
 ## --- Run species identification as job ---
@@ -28,17 +29,19 @@ job_script <- paste0(
   .save_table = path_res, 
   .multicore  = T, 
   .ref_lcvp   = wfo_backbone_lcvp, 
+  .ref_wfo    = wfo_file,
+  .tx_src     = src_tropicos,
   .ref_ncbi   = wfo_backbone_ncbi, 
   .ref_gbif   = wfo_backbone_gbif, 
-  .ref_wfo    = wfo_file,
-  .tx_src     = src_tropicos
+  .ref_gts    = gts_file,
+  .ref_iucn   = iucn_checklist
   )"
 )
 
 ## Save script
 readr::write_file(job_script, file = "tmp/job_species_solve.R")
 ## Run script
-rstudioapi::jobRunScript("tmp/job_species_solve.R", name = "species_solve", workingDir = getwd(), exportEnv = "R_GlobalEnv")
+#rstudioapi::jobRunScript("tmp/job_species_solve.R", name = "species_solve", workingDir = getwd(), exportEnv = "R_GlobalEnv")
 ## ---
 
 
