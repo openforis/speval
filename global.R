@@ -19,9 +19,8 @@ library(leaflet.extras)
 
 ## TNRS
 library(taxize) ## For tropicos
-library(taxadb)
-#library(rentrez) # for NCBI search ## Done with taxadb
-library(rgbif) ## 
+library(taxadb) ## NCBI and GBIF
+
 # remotes::install_github("idiv-biodiversity/LCVP")
 # remotes::install_github("idiv-biodiversity/lcvplants")
 library(LCVP) ## Contain lcvp data 
@@ -29,7 +28,7 @@ library(lcvplants)
 library(WorldFlora)
 
 ## Data analysis
-library(data.table) ## For WorldFlora.
+library(data.table) ## For WorldFlora
 library(furrr) #> requires: future, parallel
 library(carrier) ## Crate functions and their dependencies tables to avoid loading the whole .GlobalEnv in parallel computation workers
 library(tidyverse)
