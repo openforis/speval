@@ -134,7 +134,7 @@ shinyUI(fluidPage(
               ),
               tabPanel("Result table",
                        tags$br(),
-                       downloadButton('downloadData', 'Download'),
+                       downloadButton('downloadData', 'Download data'),
                        
                        div(style='height:650px; width:100%; background-color: #FFFFFF;overflow: scroll',
                            tableOutput("result_contents")
@@ -144,11 +144,13 @@ shinyUI(fluidPage(
               ),
               tabPanel("Statistics",
                        tags$br(),
-                       downloadButton('downloadData2', 'Download stat1'),
-                       downloadButton('downloadData3', 'Download stat2'),
+                       downloadButton('downloadStat1', 'Download stat1'),
+                       downloadButton('downloadStat2', 'Download stat2'),
+                       downloadButton('downloadStat3', 'Download stat3'),
                        div(style='height:650px; width:100%; background-color: #FFFFFF; overflow: scroll',
-                           tableOutput("result_statistics"),
-                           tableOutput("result_statistics_2")
+                           tableOutput("stat1"),
+                           tableOutput("stat2"),
+                           tableOutput("stat3"),
                        ),
                      
               ),
