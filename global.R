@@ -11,11 +11,12 @@
 library(shiny)
 library(shinyjs)   # for hiding/showing objects
 library(shinydashboard)
-library(collapsibleTree)
-library(shinycssloaders)
-library(DT)
-library(leaflet)
-library(leaflet.extras)
+library(shinyWidgets)
+# library(collapsibleTree)
+# library(shinycssloaders)
+# library(DT)
+# library(leaflet)
+# library(leaflet.extras)
 
 ## TNRS
 library(taxize) ## For tropicos
@@ -44,9 +45,6 @@ options(dplyr.summarise.inform = FALSE)
 ## Path to data and results
 path_data <- "data"
 path_res  <- "results"
-
-## Path to Global Tree Search reference data
-gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
 
 ## Path to World Flora Online reference data 
 wfo_file <- file.path(path_data, "classification.txt")
