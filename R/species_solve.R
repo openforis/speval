@@ -657,7 +657,7 @@ species_solve <- function(.path,
   nrow(species_final) == length(unique(species_cleaned$input_name))
   
   
-  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-detailed-species.csv")))
+  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species-detailed.csv")))
   write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species.csv")))
   
   
