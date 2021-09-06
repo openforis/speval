@@ -36,12 +36,12 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
       )
     )
   
-  
-  lcvp_cor %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
-  lcvp_cor %>% filter(str_detect(Input.Taxon, "Malus sieversii \\(Ledeb.\\) M.Roem."))
-  lcvp_cor %>% filter(str_detect(Output.Taxon, "Dolichandrone spathacea"))
-  lcvp_cor %>% filter(str_detect(Output.Taxon, "Manilkara zapota"))
-  tt <- lcvp_cor %>% filter(str_detect(Output.Taxon, "Poeppigia procera"))
+  ## Checks
+  # lcvp_cor %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
+  # lcvp_cor %>% filter(str_detect(Input.Taxon, "Malus sieversii \\(Ledeb.\\) M.Roem."))
+  # lcvp_cor %>% filter(str_detect(Output.Taxon, "Dolichandrone spathacea"))
+  # lcvp_cor %>% filter(str_detect(Output.Taxon, "Manilkara zapota"))
+  # tt <- lcvp_cor %>% filter(str_detect(Output.Taxon, "Poeppigia procera"))
   
   ## Check missing Output.Taxon in Input.Taxon
   ## Need to remove unresolved and external status then check for incomplete genus name and missing author name. 
@@ -91,7 +91,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
       ## Make unique id
       id_num   = 1:nrow(.),
       id_order = trunc(log10(id_num)),
-      id_num2  = str_pad(id_num, max(id_order) + 1, pad = "0", ),
+      id_num2  = str_pad(id_num, max(id_order) + 1, pad = "0"),
       taxonID  = paste0("lcvp-", id_num2),
       taxonomicStatus = if_else(Status == "unresolved", "Unchecked", str_to_title(Status)),
       
@@ -126,7 +126,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   data_lcvp2 <- data_lcvp1 %>%
     left_join(data_lcvp_acc, by = c("Output.Taxon" = "name_acc")) %>%
     mutate(acceptedNameUsageID = if_else(taxonomicStatus == "Accepted", "", acceptedNameUsageID)) %>%
-    select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus)
+    select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus, family)
   
   ## Make the WFO backbone
   data_lcvp3 <- WorldFlora::new.backbone(
@@ -137,6 +137,11 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
     acceptedNameUsageID =  "acceptedNameUsageID",
     taxonomicStatus = "taxonomicStatus"
   )
+  
+  if (Sys.info()[["sysname"]] == "Windows" & "UTF-8" %in% unique(Encoding(data_lcvp3$scientificNameAuthorship))) {
+    data_lcvp3$scientificNameAuthorship <- enc2utf8(data_lcvp3$scientificNameAuthorship)
+    Encoding(data_lcvp3$scientificNameAuthorship) <- "unknown"
+  }
   
   data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t")
   
@@ -162,7 +167,7 @@ if (!(wfo_backbone_ncbi %in% list.files(recursive = T))) {
   ## Download a local copy of the data if necessary
   taxadb::td_create("ncbi", version = "2020", overwrite = F)
   
-  ncbi_tab <- taxa_tbl("ncbi", version = "2020") %>% 
+  ncbi_tab <- taxadb::taxa_tbl("ncbi", version = "2020") %>% 
     filter(taxonomicStatus %in% c("accepted", "synonym"), phylum == "Streptophyta Bremer, 1985") %>% 
     as_tibble() %>% 
     arrange() %>%
@@ -209,7 +214,7 @@ if (!(wfo_backbone_gbif %in% list.files(recursive = T))) {
   # taxa_tbl("gbif", version = "2020") %>% filter(taxonID == "GBIF:3848388")
   
   ## Make backbone
-  gbif_tab <- taxa_tbl("gbif", version = "2020") %>% 
+  gbif_tab <- taxadb::taxa_tbl("gbif", version = "2020") %>% 
     filter(phylum == "Tracheophyta") %>% 
     as_tibble() %>% 
     arrange() %>%
@@ -264,7 +269,6 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   unzip(iucn_download, exdir = file.path(tempdir(), "iucn"), files = c("taxonomy.csv", "synonyms.csv", "simple_summary.csv"))
   
   list.files(file.path(tempdir(), "iucn"))
-  #unlink(file.path(tempdir(), "iucn"), recursive = T)
   
   ## Read files
   iucn        <- list.files(file.path(tempdir(), "iucn"), full.names = TRUE) %>% map(read_csv)
@@ -276,6 +280,7 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   
   ## Red list codes: ND added by Lauri, no data (!= not evaluated)
   iucn_codes <- tibble(
+    iucn_num   = 0:9,
     iucn_code  = c("ND", "NE", "DD", "LC", "NT", "VU", "EN", "CR", "EW", "EX"), 
     iucn_label = c("Not in Red List", "Not Evaluated", "Data Deficient", "Least Concern", 
                    "Near Threatened", "Vulnerable",  "Endangered", "Critically Endangered", 
@@ -289,68 +294,65 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   
   ## Simplify summary
   iucn_redlist <- iucn$simple_summary %>%
-    mutate(id = as.character(internalTaxonId)) %>%
-    select(id, iucn_label = redlistCategory) %>%
+    mutate(accepted_id = paste0("IUCN:", internalTaxonId)) %>%
+    select(accepted_id, iucn_label = redlistCategory) %>%
     distinct()
   
-  ## Remove authors
-  iucn_syn <- iucn$synonyms %>%
-    mutate(
-      id_accepted     = as.character(internalTaxonId),
-      name_cor        = name            %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
-      author_cor      = speciesAuthor   %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
-      infauthor_cor   = infrarankAuthor %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
-      author_regex    = author_cor    %>% str_replace_all("\\.", "\\\\.") %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)"),
-      infauthor_regex = infauthor_cor %>% str_replace_all("\\.", "\\\\.") %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)"),
-      synonym_name   = if_else(
-        is.na(infauthor_cor), 
-        name_cor %>% str_remove(paste0(" ", author_regex)),
-        name_cor %>% str_remove(paste0(" ", author_regex)) %>% str_remove(paste0(" ", infauthor_regex))
-        ),
-      synonym_author = if_else(is.na(infauthor_cor), author_cor, infauthor_cor)
-      ) %>%
-    select(id, synonym_name, synonym_author) %>%
-    distinct()
+  ## !!! Using synonyms aborted: many synonyms have more than one accepted name, 
+  ##     possibly due to the data being constructed from accepted name back to synonyms 
+  ##     instead of synonyms to accepted.  
+  # iucn_syn <- iucn$synonyms %>%
+  #   mutate(
+  #     id_num          = 1:nrow(.),
+  #     id_order        = trunc(log10(id_num)),
+  #     id_num2         = str_pad(id_num, max(id_order) + 1, pad = "0"),
+  #     id              = paste0("IUCN:", id_num2, "_syn),
+  #     accepted_id     = paste0("IUCN:", internalTaxonId),
+  #     name_cor        = name            %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
+  #     author_cor      = speciesAuthor   %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
+  #     infauthor_cor   = infrarankAuthor %>% str_remove(" \\[orth\\. error\\]| \\{orth\\. error\\]"),
+  #     author_regex    = author_cor    %>% str_replace_all("\\.", "\\\\.") %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)"),
+  #     infauthor_regex = infauthor_cor %>% str_replace_all("\\.", "\\\\.") %>% str_replace_all("\\(", "\\\\(") %>% str_replace_all("\\)", "\\\\)"),
+  #     sc_name         = if_else(
+  #       is.na(infauthor_cor), 
+  #       name_cor %>% str_remove(paste0(" ", author_regex)),
+  #       name_cor %>% str_remove(paste0(" ", author_regex)) %>% str_remove(paste0(" ", infauthor_regex))
+  #       ),
+  #     author          = if_else(is.na(infauthor_cor), author_cor, infauthor_cor),
+  #     status          = "synonym"
+  #     ) %>%
+  #   select(id, sc_name, author, status, accepted_id) %>%
+  #   distinct()
   
   ## Add IUCN red list category and synonyms to taxonomy
-  iucn_taxo1 <- iucn$taxonomy %>%
-    mutate(id = as.character(internalTaxonId)) %>%
-    select(id, sc_name = scientificName, author = authority) %>%
-    left_join(iucn_redlist, by = "id") %>%
-    left_join(iucn_syn, by = "id") %>%
-    left_join(bind_rows(iucn_codes, iucn_conv), by = "iucn_label") %>%
+  iucn_taxo <- iucn$taxonomy %>%
+    mutate(
+      id          = paste0("IUCN:", internalTaxonId),
+      accepted_id = id, 
+      status      = "accepted"
+      ) %>%
+    select(id, sc_name = scientificName, author = authority, status, accepted_id) %>%
+    #bind_rows(iucn_syn) %>% ## Aborted
+    left_join(iucn_redlist, by = "accepted_id") %>%
+    left_join(bind_rows(iucn_codes %>% select(-iucn_num), iucn_conv), by = "iucn_label") %>%
     left_join(iucn_codes, by = "iucn_code", suffix = c("", "_cor")) %>% ## Update Lower Risk to post 2001 categories
+    select(-iucn_label, iucn_label = iucn_label_cor) %>%
     distinct() %>%
     arrange(sc_name)
   
-  iucn_taxo2 <- iucn_taxo1 %>% 
-    select(id, sc_name = accepted_name, author = accepted_author, iucn_code, iucn_label_cor) %>%
-    filter(!is.na(sc_name)) %>%
-    distinct() %>%
-    mutate(id = paste0(id, "_acc")) %>%
-    bind_rows(iucn_taxo, .) %>%
-    select(-iucn_label)
+  ## Check for duplicates
+  num_taxon <- iucn_taxo %>%
+    mutate(name = paste(sc_name, author, sep = "---")) %>%
+    group_by(name) %>% summarise(count_taxon = n())
+
+  table(num_taxon$count_taxon)
   
-  ## Count entries
-  num_taxon <- iucn_taxo2 %>% 
-    group_by(sc_name) %>% summarise(count_taxon = n())
-    
-  iucn_taxo3 <- iucn_taxo2 %>%
-    left_join(num_taxon, by = "sc_name") %>%
-    mutate(
-      accepted_name   = if_else(count_taxon > 1, NA_character_, accepted_name),
-      accepted_author = if_else(count_taxon > 1, NA_character_, accepted_author), 
-      status          = case_when(
-        is.na(accepted_name) & count_taxon == 1 ~ "accepted",
-        is.na(accepted_name) & count_taxon  > 1 ~ "unresolved",
-        !is.na(accepted_name)                   ~ "synonym",
-        TRUE ~ NA_character_
-      )
-    ) %>%
-    distinct()
+  ## Write file
+  write_csv(iucn_taxo, file = iucn_checklist)
   
   ## !!! Remove tmp objects
-  rm(gbif_tab)
+  rm(iucn_download, iucn, iucn_codes, iucn_conv, iucn_redlist, iucn_syn, iucn_taxo)
+  unlink(file.path(tempdir(), "iucn"), recursive = T)
   ## !!!
 
   time2 <- Sys.time()
