@@ -73,6 +73,16 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
       left_join(solved_tmp, by = "input")
     solved_pow <- solved_pow2
     rm(solved_tmp, solved_pow2)
+  } else {
+    solved_pow2 <- solved_pow %>%
+      mutate(
+        synonymOf.accepted = FALSE, 
+        synonymOf.author   = NA_character_,   	
+        synonymOf.name	   = NA_character_,
+        synonymOf.url      = NA_character_
+        )
+    solved_pow <- solved_pow2
+    rm(solved_pow2)
   }
   
   if ("images" %in% names(solved_pow)) solved_pow <- solved_pow %>% select(-images)
@@ -89,9 +99,9 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
       fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
       #fuzzy_res    = NA,
       status        = case_when(
-        accepted                       ~ "accepted",
-        !accepted & synonymOf.accepted ~ "synonym",
-        #is.na(accepted)                ~ "noref",
+        accepted           ~ "accepted",
+        synonymOf.accepted ~ "synonym",
+        #is.na(accepted)    ~ "noref",
         TRUE ~ "not found"
       ),
       score         = if_else(is.na(accepted), "no hit", "matched"),
@@ -102,7 +112,7 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
       process       = paste0(refdata_id, "_", algo_reduced),
       
       ## Accepted names
-      accepted_id     = if_else(status == "synonym", synonymOf.url   , url   ) %>% str_remove("/taxon/urn:lsid:ipni.org:names:"),
+      accepted_id     = if_else(status == "synonym", synonymOf.url   , url) %>% str_remove("/taxon/urn:lsid:ipni.org:names:"),
       accepted_name   = case_when(
         status == "accepted"  ~ name,
         status == "synonym"   ~ synonymOf.name, 
