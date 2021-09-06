@@ -24,10 +24,6 @@
 
 solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) {
   
-  ## !!! For testing
-  #.taxon <- notsolved1
-  ## !!!
-  
   ## Check function inputs
   stopifnot(is.character(.taxon))
   
