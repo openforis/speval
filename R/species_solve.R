@@ -61,7 +61,9 @@ species_solve <- function(.path,
   
   time_start <- Sys.time()
   
-  message("\n---\nInitiating Taxonomic Resolution.\n---\n")
+  message("---")
+  message("Initiating Taxonomic Resolution.")
+  message("---")
   
   
   
@@ -324,7 +326,9 @@ species_solve <- function(.path,
   # res_5 <- list(tab = read_csv("results/NFMA_species_clean100-2021-09-05-2000-resWFO-withgbif-harmo.csv"), duration = tibble(process = "gbif_WFO.match", duration_sec = 1000))
   ## !!!
   
-  message("\n---\nAnalyzing results.\n---\n")
+  message("---")
+  message("Analyzing results.")
+  message("---")
   
   time1 <- Sys.time()
   
@@ -386,7 +390,8 @@ species_solve <- function(.path,
   )
   
   stat1 <- out_tab %>%
-    group_by(process, refdata,	matching_algo, status) %>%
+    #group_by(process, refdata,	matching_algo, status) %>%
+    group_by(process, status) %>%
     summarize(count = n()) %>%
     pivot_wider(names_from = status, values_from = count, values_fill = 0) %>%
     ungroup() %>%
@@ -591,7 +596,9 @@ species_solve <- function(.path,
   
   ## *** Make final species list --------------------------------------------
   
-  message("\n---\nMaking final species lists.\n---\n")
+  message("---")
+  message("Making final species lists.")
+  message("---")
   
   if (length(species_notsolved) != 0) {
     
@@ -656,9 +663,10 @@ species_solve <- function(.path,
   ## Check
   nrow(species_final) == length(unique(species_cleaned$input_name))
   
-  
-  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species-detailed.csv")))
-  write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species.csv")))
+  if (!is.null(.save_table)) {
+    write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species-detailed.csv")))
+    write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-species.csv")))
+  }
   
   
   ## *** Update STAT2 -------------------------------------------------------
@@ -708,9 +716,11 @@ species_solve <- function(.path,
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
   
   ## Save stat tables
-  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat1.csv")))  
-  write_csv(stat2.1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat2.csv")))
-  write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat3.csv")))
+  if (!is.null(.save_table)) {
+    write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat1.csv")))  
+    write_csv(stat2.1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat2.csv")))
+    write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-stat3.csv")))
+  }
   
   
   
@@ -726,7 +736,9 @@ species_solve <- function(.path,
   mm       <- trunc(dt / 60) - hh * 60
   ss       <- dt - hh * 3600 - mm * 60
   
-  message(paste0("\n---\nTaxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec.\n---\n"))
+  message("---")
+  message(paste0("Taxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec."))
+  message("---")
   
   out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3)
   out
