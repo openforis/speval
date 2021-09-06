@@ -379,8 +379,6 @@ species_solve <- function(.path,
   # table(out_tab$process, out_tab$result_type, useNA = "always")
   # table(out_tab$count_taxon, out_tab$count_dup)
   
-  write_csv(out_tab, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-results.csv")))
-  
   rm(count_input, count_taxon, count_dup)
   
   
@@ -406,8 +404,6 @@ species_solve <- function(.path,
     select(-order) %>%
     mutate(across(where(is.numeric), as.character)) %>%
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
-  
-  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
   
   
   ## *** Regroup unique solutions ------------------------------------------- 
@@ -491,9 +487,6 @@ species_solve <- function(.path,
   )
   
   stat2 <- tibble(step = stat2[,1], count = stat2[,2])
-  
-  ## Save later
-  # write_csv(stat2, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
@@ -668,6 +661,10 @@ species_solve <- function(.path,
   nrow(species_final) == length(unique(species_cleaned$input_name))
   
   
+  write_csv(tab_final    , file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-detailed-species.csv")))
+  write_csv(species_final, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-species.csv")))
+  
+  
   ## *** Update STAT2 -------------------------------------------------------
   
   stat2.1 <- stat2 %>% slice_head(n = nrow(stat2) - 2) %>%
@@ -714,6 +711,9 @@ species_solve <- function(.path,
     mutate(across(everything(), as.character)) %>%
     mutate(across(everything(), ~if_else(is.na(.x), "", .x)))
   
+  ## Save stat tables
+  write_csv(stat1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat1.csv")))  
+  write_csv(stat2.1, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat2.csv")))
   write_csv(stat3, file.path(.save_table, paste0(filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M"), "-stat3.csv")))
   
   
