@@ -96,7 +96,7 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
         accepted                       ~ "accepted",
         !accepted & synonymOf.accepted ~ "synonym",
         #is.na(accepted)                ~ "noref",
-        TRUE ~ "noref"
+        TRUE ~ "not found"
       ),
       score         = if_else(is.na(accepted), "no hit", "matched"),
       refdata_id    = "pow",
@@ -108,9 +108,9 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
       ## Accepted names
       accepted_id     = if_else(status == "synonym", synonymOf.url   , url   ) %>% str_remove("/taxon/urn:lsid:ipni.org:names:"),
       accepted_name   = case_when(
-        status == "accepted" ~ name,
-        status == "synonym"  ~ synonymOf.name, 
-        status == "noref"    ~ sc_name,
+        status == "accepted"  ~ name,
+        status == "synonym"   ~ synonymOf.name, 
+        status == "not found" ~ sc_name,
         TRUE ~ NA_character_
         ),
       accepted_author = if_else(status == "synonym", synonymOf.author, author),
