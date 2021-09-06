@@ -147,7 +147,7 @@ species_clean <- function(.path){
   
   
   ## Output #################################################################
-  out_sp    <- sp_df %>% filter(!is.na(input_ready)) %>% pull(input_ready) %>% unique() %>% sort() 
+  out_sp    <- sp_df %>% filter(!is.na(input_ready)) %>% pull(input_ready) %>% unique() %>% sort()
   out_genus <- out_sp %>% word() %>% unique() %>% sort()
   
   time2 <- Sys.time()
@@ -157,7 +157,7 @@ species_clean <- function(.path){
   message("......Number of unique genus: ", length(out_genus))
   message("")
   
-  return(sp_df %>% select(scientific_name, input_cor, input_ready))
+  return(sp_df %>% select(input_name = scientific_name, input_ready))
   
 } ## END FUNCTION
 
