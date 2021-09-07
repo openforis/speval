@@ -28,6 +28,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
         Output.Taxon == "Dolichandrone spathacea (L.f.) Seem." ~ "Dolichandrone spathacea (L.f.) K.Schum.",
         Output.Taxon == "Manilkara zapota"                     ~ "Manilkara zapota (L.) P.Royen",
         Output.Taxon == "Poeppigia procera C.Presl"            ~ "Poeppigia procera (Poepp. ex Spreng.) C.Presl",
+        Output.Taxon == "Aniba canellila Mez"                  ~ "Aniba canellila (Kunth) Mez",
         TRUE ~ Output.Taxon
       ),
       Status = case_when(
@@ -351,7 +352,7 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   write_csv(iucn_taxo, file = iucn_checklist)
   
   ## !!! Remove tmp objects
-  rm(iucn_download, iucn, iucn_codes, iucn_conv, iucn_redlist, iucn_syn, iucn_taxo)
+  rm(iucn_download, iucn, iucn_codes, iucn_conv, iucn_redlist, iucn_taxo)
   unlink(file.path(tempdir(), "iucn"), recursive = T)
   ## !!!
 
