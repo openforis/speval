@@ -11,8 +11,8 @@ if (!(gts_file %in% list.files(recursive = T))) {
   message("Downloading Global Tree Search dataset...")
   
   download.file(
-    destfile = paste0(path_data, "/", gts_file), 
-    url      = paste0("https://tools.bgci.org/", gts_file)
+    destfile = gts_file, 
+    url      = paste0("https://tools.bgci.org/", gts_file %>% str_remove(".*/"))
   )
   
   time2 <- Sys.time()
@@ -39,7 +39,7 @@ if (!(wfo_file %in% list.files(recursive = T))) {
   
   utils::unzip(
     zipfile = paste0(path_data, "/WFO_Backbone.zip"),
-    files   = wfo_file, 
+    files   = wfo_file %>% str_remove(".*/"), 
     exdir   = path_data
   )
   
