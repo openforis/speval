@@ -523,7 +523,7 @@ species_solve <- function(.path,
 
   } else {
     
-    solved_pow <- list(tab = NULL, dt = NULL )
+    solved_pow <- list(tab = NULL, dt = NULL)
     
   }
   
