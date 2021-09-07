@@ -47,7 +47,6 @@ shinyServer(function(input, output, session) {
   
   output$text <- renderText("Before you can import a species list, you need to prepare a table and save it as a CSV format file. Then upload the file into this app.")
   
-
   # observe({ 
   #   file.copy(input$file1$datapath,
   #             input$file1$name, overwrite = TRUE)
@@ -65,8 +64,6 @@ shinyServer(function(input, output, session) {
     output$stat2           <- renderTable(NULL)
     output$stat3           <- renderTable(NULL)
     output$result_contents <- renderTable(NULL)
-    
-    filename <- input$file1$name %>% str_remove(".csv")
     
   })
   
@@ -108,7 +105,7 @@ shinyServer(function(input, output, session) {
     })
     
     output$downloadData <- downloadHandler(
-      filename <- function() { file.path(path_res, paste0(filename, "-species.csv")) },
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-species.csv") },
       content  <- function(file) { readr::write_csv(species_solved()$species_final, file) }
       )
     
@@ -118,7 +115,7 @@ shinyServer(function(input, output, session) {
     })
     
     output$downloadStat1 <- downloadHandler(
-      filename <- function() { file.path(path_res, paste0(filename,"-stat1.csv")) },
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"),"-stat1.csv") },
       content  <- function(file) { readr::write_csv(species_solved()$stat1, file) }
     )
     
@@ -128,7 +125,7 @@ shinyServer(function(input, output, session) {
     })
     
     output$downloadStat2 <- downloadHandler(
-      filename <- function() { file.path(path_res, paste0(filename, "-stat2.csv")) },
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-stat2.csv") },
       content  <- function(file) { readr::write_csv(species_solved()$stat2, file) }
     )
     
@@ -138,7 +135,7 @@ shinyServer(function(input, output, session) {
     })
     
     output$downloadStat3 <- downloadHandler(
-      filename <- function() { file.path(path_res, paste0(filename, "-stat3.csv")) },
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-stat3.csv") },
       content  <- function(file) { readr::write_csv(species_solved()$stat3, file) }
     )
     
