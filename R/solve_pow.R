@@ -61,7 +61,21 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   # table(solved_wfo$taxonomicStatus, useNA = "always")
   # table(solved_wfo$Fuzzy, useNA = "always")
   
-  ## Solve data.frame inside data.frame
+  ## Make a data frame with NAs if solved_pow is empty
+  if (nrow(solved_pow) == 0) {
+    
+    ## !!! HAVE to create a full table solved_pow with NAs
+    solved_pow <- tibble(
+      input    = NA_character_,
+      name     = NA_character_,
+      accepted = FALSE,
+      url      = NA_character_,
+      author   = NA_character_
+    )
+    
+  } 
+  
+  ## Solve data.frame inside data.frame when synonym found
   if ("synonymOf" %in% names(solved_pow)) {
     
     solved_tmp  <- solved_pow$synonymOf %>%
@@ -71,9 +85,10 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
       as_tibble() %>% 
       select(-synonymOf) %>% 
       left_join(solved_tmp, by = "input")
-    solved_pow <- solved_pow2
-    rm(solved_tmp, solved_pow2)
+    rm(solved_tmp)
+    
   } else {
+    
     solved_pow2 <- solved_pow %>%
       mutate(
         synonymOf.accepted = FALSE, 
@@ -81,15 +96,14 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
         synonymOf.name	   = NA_character_,
         synonymOf.url      = NA_character_
         )
-    solved_pow <- solved_pow2
-    rm(solved_pow2)
+    
   }
   
-  if ("images" %in% names(solved_pow)) solved_pow <- solved_pow %>% select(-images)
+  if ("images" %in% names(solved_pow2)) solved_pow2 <- solved_pow2 %>% select(-images)
   
   ## --- Harmonize ---
   solved_out <- tibble(sc_name = .taxon) %>%
-    left_join(solved_pow, by = c("sc_name" = "input")) %>%
+    left_join(solved_pow2, by = c("sc_name" = "input")) %>%
     rowwise() %>%
     mutate(fuzzy_dist = as.numeric(utils::adist(sc_name, name, ignore.case = T))) %>%
     ungroup() %>%
@@ -118,7 +132,7 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
         status == "synonym"   ~ synonymOf.name, 
         status == "not found" ~ sc_name,
         TRUE ~ NA_character_
-        ),
+      ),
       accepted_author = if_else(status == "synonym", synonymOf.author, author),
     ) %>% 
     select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
@@ -154,7 +168,7 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   #   ) %>%
   #   select(name, fuzzy, fuzzy_dist, status, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
   #   distinct()
-  # ## ---
+  ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
   if (!is.null(.save_table)) {
