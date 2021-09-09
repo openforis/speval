@@ -33,7 +33,7 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   
   ## Check function inputs
   stopifnot(is.character(.taxon))
-  stopifnot(is.integer(.gnr_src))
+  stopifnot(is.double(.gnr_src))
   
   ## Remove genus alone from the data
   #input <- setdiff(.taxon, word(.taxon)) %>% unique() %>% sort()
@@ -52,7 +52,10 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
     function(.x){
       message("Processing sequence: ", min(.x), " to ", max(.x), ".")
       tropicos_input = input[.x]
-      taxize::gnr_resolve(tropicos_input, data_source_ids = .gnr_src, with_canonical_ranks = TRUE)
+      tryCatch(
+        taxize::gnr_resolve(tropicos_input, data_source_ids = .gnr_src, with_canonical_ranks = TRUE), 
+        error = function(e) e
+        )
     })
   
   ## Make chunks
@@ -69,47 +72,60 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   ## --- END RUN LCVP ---
   
   ## --- Harmonize ---
-  solved_out <- tibble(sc_name = .taxon) %>%
-    left_join(solved_tropicos, by = c("sc_name" = "user_supplied_name")) %>%
-    rowwise() %>%
-    mutate(fuzzy_dist = if_else(is.na(matched_name2), 0, as.numeric(utils::adist(sc_name, matched_name2, ignore.case = T)))) %>%
-    ungroup() %>%
-    mutate(
-      fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
-      #fuzzy_res     = NA,
-      status        = case_when(
-        is.na(matched_name2) ~ "noref",
-        matched_name2 == sc_name & score >= 0.5    ~ "accepted",
-        matched_name2 == sc_name & score <  0.5    ~ "unresolved",
-        matched_name2 != sc_name & fuzzy_dist < 5  ~ "accepted",
-        matched_name2 != sc_name & fuzzy_dist >= 5 ~ "synonym",
-        TRUE ~ NA_character_
+  connection_error <- any(class(solved_tropicos) == "error")
+  
+  if (connection_error) {
+    
+    solved_out <- NULL
+    dt         <- NULL
+    
+  } else {
+    
+    solved_out <- tibble(sc_name = .taxon) %>%
+      left_join(solved_tropicos, by = c("sc_name" = "user_supplied_name")) %>%
+      rowwise() %>%
+      mutate(fuzzy_dist = if_else(is.na(matched_name2), 0, as.numeric(utils::adist(sc_name, matched_name2, ignore.case = T)))) %>%
+      ungroup() %>%
+      mutate(
+        fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
+        #fuzzy_res     = NA,
+        status        = case_when(
+          is.na(matched_name2) ~ "noref",
+          matched_name2 == sc_name & score >= 0.5    ~ "accepted",
+          matched_name2 == sc_name & score <  0.5    ~ "unresolved",
+          matched_name2 != sc_name & fuzzy_dist < 5  ~ "accepted",
+          matched_name2 != sc_name & fuzzy_dist >= 5 ~ "synonym",
+          TRUE ~ NA_character_
         ),
-      score         = as.character(score),
-      accepted_id   = NA_character_,
-      refdata_id    = "tropicos",
-      refdata       = "Tropicos - Missouri Botanical Garden",
-      matching_algo = "taxize::gnr_resolve()",
-      algo_reduced    = matching_algo %>% str_remove(".*::") %>% str_remove("\\(") %>% str_remove("\\)"),
-      process         = paste0(refdata_id, "_", algo_reduced),
-      
-      ## Accepted name
-      accepted_name = matched_name2,
-      accepted_author = NA_character_
-    ) %>%
-    select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
-    distinct()
+        score         = as.character(score),
+        accepted_id   = NA_character_,
+        refdata_id    = "tropicos",
+        refdata       = "Tropicos - Missouri Botanical Garden",
+        matching_algo = "taxize::gnr_resolve()",
+        algo_reduced    = matching_algo %>% str_remove(".*::") %>% str_remove("\\(") %>% str_remove("\\)"),
+        process         = paste0(refdata_id, "_", algo_reduced),
+        
+        ## Accepted name
+        accepted_name = matched_name2,
+        accepted_author = NA_character_
+      ) %>%
+      select(sc_name, fuzzy, fuzzy_dist, status, score, accepted_id, accepted_name, accepted_author, process, refdata_id, refdata, matching_algo) %>%
+      distinct()
+    
+    dt <- tibble(process = unique(solved_out$process), duration_sec = dt)
+    
+  }
   ## ---
   
   ## output object to .GlobalEnv but just to be safe, also write csv back to demo file
-  if (!is.null(.save_table)) {
+  if (!is.null(.save_table) & !connection_error) {
     write_csv(solved_tropicos, paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos.csv"))
     write_csv(solved_out     , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos-harmo.csv"))
     write_tsv(tibble(NULL)   , paste0(.save_table, "/", .filename, "-", format(Sys.time(), format = "%Y-%m-%d-%H%M%S"), "-resTropicos-", dt,"-secs.txt"))
   }
   
   ## Output
-  list(tab = solved_out, dt = tibble(process = unique(solved_out$process), duration_sec = dt))
+  list(tab = solved_out, dt = dt)
   
 }
 
