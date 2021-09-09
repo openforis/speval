@@ -740,7 +740,7 @@ species_solve <- function(.path,
   message(paste0("Taxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec."))
   message("---")
   
-  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3)
+  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3, valid = TRUE)
   out
   
 } ## End function species_solve()
