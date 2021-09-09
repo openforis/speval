@@ -40,6 +40,8 @@ library(tidyverse)
 ## Options for dplyr::summarise()
 options(dplyr.summarise.inform = FALSE)
 
+
+
 ## Admin input (not accessible for shiny users) #############################
 
 ## Path to data and results
@@ -76,6 +78,14 @@ gts_file <- file.path(path_data, "global_tree_search_trees_1_5.csv")
 ## - Find zip when file.choose() called
 ## !!!
 iucn_checklist <- file.path(path_data, "iucn_checklist.csv")
+
+## Code for Tropicos service in https://resolver.globalnames.org/
+## Can be updated with:
+# src_tropicos <- taxize::gnr_datasources() %>%
+#   filter(title == "Tropicos - Missouri Botanical Garden") %>%
+#   pull(id)
+src_tropicos <- 165
+
 
 
 ## Create paths plus directories to data and results ########################
@@ -119,9 +129,23 @@ source("R/make_backbone.R", local = T)
 ## Setup ####################################################################
 
 ## Get TROPICOS service ID
-src_tropicos <- taxize::gnr_datasources() %>% 
-  filter(title == "Tropicos - Missouri Botanical Garden") %>%
-  pull(id)
+# test_gnr <- tryCatch(taxize::gnr_datasources(opts = list(timeout_ms = 500)), error = function(e) e)
+# error_gnr <- any(class(test_gnr) == "error")
+# 
+# if (error_gnr) {
+#   message("Tropicos service NOT available.") 
+# } else {
+#   message("Tropicos service available.") 
+# }
+
+# test_pow <- tryCatch(taxize::pow_search("Acacia mangium"), error = function(e) e)
+# error_pow <- any(class(test_pow) == "error")
+# 
+# if (error_pow) {
+#   message("Plant of the World Online service NOT available.")
+# } else {
+#   message("Plant of the World Online service available.")
+# }
 
 # ## SUPERSEEDED: multicore setup replaced with future::plan(multiprocess), compatible with all OS  
 # ## Add parallel computing library for Linux systems
