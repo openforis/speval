@@ -77,6 +77,7 @@ shinyServer(function(input, output, session) {
     
     if ("scientific_name" %in% names(check_table())) {
       
+      shinyjs::html(id = "console_text", "")
       withCallingHandlers({
         species_solve(
           .path       = input$file1$datapath,
@@ -98,7 +99,8 @@ shinyServer(function(input, output, session) {
       })
       
     } else {
-  
+      
+      shinyjs::html(id = "console_text", "")
       shinyjs::html(id = "console_text", html = "The input file doesn't have 'scientific_name' column. <br>")
       shinyjs::html(id = "console_text", html = "Please re-upload a CSV file with the species list under a column named: 'scientific_name'. <br>", add = TRUE)
       list(valid = FALSE)
@@ -141,7 +143,7 @@ shinyServer(function(input, output, session) {
     })
 
     output$downloadData <- downloadHandler(
-      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-species.csv") },
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-results.csv") },
       content  <- function(file) { readr::write_csv(species_solved()$species_final, file) }
       )
 

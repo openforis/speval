@@ -83,7 +83,8 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with WFO and ", ref_filename, " - ", dt, " sec."))
+  message(paste0("...Taxa solved with WFO and ", ref_filename, " - ", dt, " sec."))
+  message("")
   ## --- END RUN WFO ---
   
   # table(solved_wfo$taxonomicStatus, useNA = "always")

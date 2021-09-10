@@ -68,7 +68,8 @@ solve_tropicos <- function(.taxon, .gnr_src, .save_table = NULL, .filename = "")
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with Tropicos", " - ", dt, " sec."))
+  message(paste0("...Taxa solved with Tropicos", " - ", dt, " sec."))
+  message("")
   ## --- END RUN LCVP ---
   
   ## --- Harmonize ---

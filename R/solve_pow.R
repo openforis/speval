@@ -55,7 +55,8 @@ solve_pow <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) 
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with POW - ", dt, " sec."))
+  message(paste0("...Taxa solved with POW - ", dt, " sec."))
+  message("")
   ## --- END RUN POW ---
   
   # table(solved_wfo$taxonomicStatus, useNA = "always")

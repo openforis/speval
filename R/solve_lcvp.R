@@ -40,7 +40,8 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
-  message(paste0("...Taxons solved with LCVP", " - ", dt, " sec."))
+  message(paste0("...Taxa solved with LCVP", " - ", dt, " sec."))
+  message("")
   ## --- END RUN LCVP ---
   
   # table(solved_lcvp$Status, useNA = "always")
