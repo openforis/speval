@@ -646,7 +646,7 @@ species_solve <- function(.path,
             )
           ) %>%
           left_join(gts_codes, by = "gts_num") %>%
-          select(-starts_with("is_gts"), name_search)
+          select(-starts_with("is_gts"), -name_search)
       } else { . } } %>%
     
     ## Add IUCN status
