@@ -135,7 +135,7 @@ species_solve <- function(.path,
     
     if (.how_to %in% c("compare", "integrate", "lcvp")) {
       
-      message("Start LCVP()...")
+      message("Solve with Leipzig Catalogue of Vascular Plants...")
       
       ## Select data
       ## --- Data is species_notsolved as this is the first service
@@ -167,7 +167,7 @@ species_solve <- function(.path,
   
   if (.how_to %in% c("compare", "integrate", "wfo_lcvp") & length(species_notsolved != 0)) {
     
-    message("Start WFO.match() with LCVP backbone...")
+    message("Solve with Leipzig Catalogue of Vascular Plants...")
     
     ## Run service
     res_wfo_lcvp <- solve_wfo(
@@ -197,7 +197,7 @@ species_solve <- function(.path,
   
   if (.how_to %in% c("compare", "integrate", "wfo") & length(species_notsolved != 0)) {
     
-    message("Start WFO.match() with WFO backbone...")
+    message("Solve with World Flora Online...")
     
     ## Run service
     res_wfo <- solve_wfo(
@@ -227,7 +227,7 @@ species_solve <- function(.path,
   
   if (.how_to %in% c("compare", "integrate", "tropicos") & length(species_notsolved != 0)) {
     
-    message("Start gnr_resolve() with Tropicos backbone...")
+    message("Solve with Tropicos - Missouri Botanical Garden...")
     
     ## Run service
     res_tropicos <- solve_tropicos(
@@ -254,8 +254,7 @@ species_solve <- function(.path,
   ## *** 4. WFO.match() with NCBI backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_ncbi") & length(species_notsolved != 0)) {
     
-    message("Start WFO.match() with NCBI backbone...")
-    
+    message("Solve with National Center for Biotechnology Information...")
     ## Run service
     res_ncbi <- solve_wfo(
       .taxon      = species_notsolved, 
@@ -284,7 +283,7 @@ species_solve <- function(.path,
   ## *** 5. WFO.match() with GBIF backbone ----------------------------------
   if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
-    message("Start WFO.match() with GBIF backbone...")
+    message("Solve with Global Biodiversity Information Facility...")
     
     ## Run service
     res_gbif <- solve_wfo(
@@ -492,7 +491,7 @@ species_solve <- function(.path,
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Analysis done: ", length(species_notsolved), " inputs remaining to solve - ", dt, " sec."))
-  
+  message(" ")
   rm(out1, out2, out3, out3_tmp, unique_firstprocess)
   rm(nout1, nout1b, nout2, nout3)
   rm(duration, num_process)
@@ -509,7 +508,7 @@ species_solve <- function(.path,
   ## *** pow_search() on remaining not solved -------------------------------
   if (length(species_notsolved) != 0) {
 
-    message("Send remaining issues to Kew Plants of the World Online...")
+    message("Send remaining issues to Kew - Plants of the World Online...")
 
     ## Run service
     solved_pow <- solve_pow(
@@ -736,9 +735,8 @@ species_solve <- function(.path,
   mm       <- trunc(dt / 60) - hh * 60
   ss       <- dt - hh * 3600 - mm * 60
   
-  message("---")
   message(paste0("Taxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec."))
-  message("---")
+  message("********************")
   
   out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3, valid = TRUE)
   out

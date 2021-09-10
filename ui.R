@@ -18,7 +18,6 @@ shinyUI(fluidPage(
   # Tooltip texts end   ****************
   shinyjs::useShinyjs(),
   
-  
   # remove shiny "red" warning messages on GUI
   tags$style(type="text/css",
              ".shiny-output-error { visibility: hidden; }",

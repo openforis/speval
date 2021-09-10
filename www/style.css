@@ -48,3 +48,8 @@ body {
   transform: rotateY(180deg);
   z-index: 1;
 }
+
+.swal-modal {
+  width: 80%;
+  font-size: small;
+}
