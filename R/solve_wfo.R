@@ -99,7 +99,7 @@ solve_wfo <- function(.taxon, .ref_file, .ref_name, .multicore = TRUE, .save_tab
     mutate(
       
       ## Calculate harmonized indicators
-      fuzzy_dist      = if_else(is.na(Fuzzy.dist), 0, Fuzzy.dist),
+      fuzzy_dist      = if_else(is.na(Fuzzy.dist), 0, as.numeric(Fuzzy.dist)),
       fuzzy           = Fuzzy,
       #fuzzy_res       = NA,
       status          = case_when(

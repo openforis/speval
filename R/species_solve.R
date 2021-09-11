@@ -64,7 +64,7 @@ species_solve <- function(.path,
   message("---")
   message("Initiating Taxonomic Resolution.")
   message("---")
-  
+
   
   
   ## ************************************************************************
@@ -670,11 +670,14 @@ species_solve <- function(.path,
   
   ## *** Update STAT2 -------------------------------------------------------
   
+  if (length(species_notsolved) != 0) {
   stat2.1 <- stat2 %>% slice_head(n = nrow(stat2) - 2) %>%
     bind_rows(list(step = "Solved with POW", count = solved_pow$tab %>% filter(status %in% c("accepted", "synonym")) %>% nrow() %>% as.character())) %>%
     bind_rows(list(step = "Remaining unsolved", count = solved_pow$tab %>% filter(status == "not found") %>% nrow() %>% as.character())) %>%
     bind_rows(stat2 %>% slice_tail(n = 2))
-  
+  } else {
+    stat2.1 <- stat2
+  }
   
   ## *** STAT3: tables ------------------------------------------------------
   
@@ -738,7 +741,7 @@ species_solve <- function(.path,
   message(paste0("Taxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, "sec."))
   message("********************")
   
-  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2, stat3 = stat3, valid = TRUE)
+  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2.1, stat3 = stat3, valid = TRUE)
   out
   
 } ## End function species_solve()

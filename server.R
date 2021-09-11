@@ -117,7 +117,7 @@ shinyServer(function(input, output, session) {
       species_results$output <- withCallingHandlers({
         species_solve(
           .path       = input$file1$datapath,
-          .how_to     = "wfo_ncbi", #"compare",
+          .how_to     = "compare", #"wfo_ncbi", 
           .with_lcvp  = FALSE,
           .save_table = NULL,
           .multicore  = input$opt_multicore,
