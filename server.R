@@ -171,7 +171,9 @@ shinyServer(function(input, output, session) {
 
     ## Species solved table
     output$result_contents <- renderTable({
-      species_results$output$species_final
+      species_results$output$species_final %>% 
+        select(-gts_num, -iucn_id, -iucn_num, -iucn_code, -sc_name, -accepted_genus) %>%
+        mutate(fuzzy_dist = as.integer(fuzzy_dist))
     })
 
     output$downloadData <- downloadHandler(
