@@ -53,7 +53,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   lcvp_add <- tibble(sp_add = lcvp_out[is.na(match(lcvp_out, lcvp_in))]) %>%
     mutate(
       ## Split names based on space
-      split_input  = sp_add %>% str_split(" ", n = 5),
+      split_input  = sp_add %>% enc2utf8() %>% str_split(" ", n = 5),
       genus        = map_chr(split_input, 1, .default = ""),
       epithet      = map_chr(split_input, 2, .default = ""),
       intrasp      = map_chr(split_input, 3, .default = ""),
@@ -84,10 +84,8 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   
   ## Address 1. and 2.
   data_lcvp1 <- lcvp_cor %>% 
-    as_tibble() %>%
     bind_rows(lcvp_add) %>%
     arrange(Input.Taxon) %>%
-    as_tibble() %>%
     mutate(
       ## Make unique id
       id_num   = 1:nrow(.),
@@ -97,7 +95,7 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
       taxonomicStatus = if_else(Status == "unresolved", "Unchecked", str_to_title(Status)),
       
       ## Split names based on space
-      split_input  = Input.Taxon %>% str_split(" ", n = 5),
+      split_input  = Input.Taxon %>% enc2utf8() %>% str_split(" ", n = 5),
       genus        = map_chr(split_input, 1, .default = ""),
       epithet      = map_chr(split_input, 2, .default = ""),
       intrasp      = map_chr(split_input, 3, .default = ""),
@@ -126,8 +124,19 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## Join the accepted name ID with the table
   data_lcvp2 <- data_lcvp1 %>%
     left_join(data_lcvp_acc, by = c("Output.Taxon" = "name_acc")) %>%
-    mutate(acceptedNameUsageID = if_else(taxonomicStatus == "Accepted", "", acceptedNameUsageID)) %>%
+    mutate(
+      acceptedNameUsageID = if_else(taxonomicStatus == "Accepted", "", acceptedNameUsageID),
+      scientificNameAuthorship = str_trim(scientificNameAuthorship)
+      ) %>%
     select(taxonID, scientificName, scientificNameAuthorship, acceptedNameUsageID, taxonomicStatus, family)
+  
+  # data_lcvp1 %>% filter(scientificName == "Aalius compressa") %>% pull(scientificNameAuthorship)
+  # data_lcvp2 %>% filter(scientificName == "Aalius compressa") %>% pull(scientificNameAuthorship)
+  
+  # if (Sys.info()[["sysname"]] == "Windows") {
+  #   data_lcvp2$scientificNameAuthorship <- enc2utf8(data_lcvp2$scientificNameAuthorship)
+  #   Encoding(data_lcvp2$scientificNameAuthorship) <- "unknown"
+  # }
   
   ## Make the WFO backbone
   data_lcvp3 <- WorldFlora::new.backbone(
@@ -139,12 +148,9 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
     taxonomicStatus = "taxonomicStatus"
   )
   
-  if (Sys.info()[["sysname"]] == "Windows" & "UTF-8" %in% unique(Encoding(data_lcvp3$scientificNameAuthorship))) {
-    data_lcvp3$scientificNameAuthorship <- enc2utf8(data_lcvp3$scientificNameAuthorship)
-    Encoding(data_lcvp3$scientificNameAuthorship) <- "unknown"
-  }
+  names(data_lcvp3)[length(names(data_lcvp3))] <- "family"
   
-  data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t")
+  data.table::fwrite(data_lcvp3, file = wfo_backbone_lcvp, sep = "\t", bom = TRUE)
   
   ## !!! Remove tmp objects
   rm(check_intrasp, lcvp_cor, lcvp_in, lcvp_out, lcvp_add, data_lcvp1, data_lcvp2, data_lcvp3, data_lcvp_acc)
