@@ -19,23 +19,23 @@ if (!(wfo_backbone_lcvp %in% list.files(recursive = T))) {
   ## Common abbreviation for intraspecies
   check_intrasp <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
   
-  ## Correct few mistakes in LCVP table
-  lcvp_cor <- LCVP::tab_lcvp %>% 
-    as_tibble() %>%
-    mutate(
-      Output.Taxon = case_when(
-        Output.Taxon == "Dalbergia nitidula Baker"             ~ "Dalbergia nitidula Welw. ex Baker",
-        Output.Taxon == "Dolichandrone spathacea (L.f.) Seem." ~ "Dolichandrone spathacea (L.f.) K.Schum.",
-        Output.Taxon == "Manilkara zapota"                     ~ "Manilkara zapota (L.) P.Royen",
-        Output.Taxon == "Poeppigia procera C.Presl"            ~ "Poeppigia procera (Poepp. ex Spreng.) C.Presl",
-        Output.Taxon == "Aniba canellila Mez"                  ~ "Aniba canellila (Kunth) Mez",
-        TRUE ~ Output.Taxon
-      ),
-      Status = case_when(
-        Input.Taxon == "Malus sieversii (Ledeb.) M.Roem." ~ "accepted",
-        TRUE ~ Status
-      )
-    )
+  ## Correct few mistakes in LCVP table --- Not implemented
+  lcvp_cor <- LCVP::tab_lcvp #%>% 
+    # as_tibble() %>%
+    # mutate(
+    #   Output.Taxon = case_when(
+    #     Output.Taxon == "Dalbergia nitidula Baker"             ~ "Dalbergia nitidula Welw. ex Baker",
+    #     Output.Taxon == "Dolichandrone spathacea (L.f.) Seem." ~ "Dolichandrone spathacea (L.f.) K.Schum.",
+    #     Output.Taxon == "Manilkara zapota"                     ~ "Manilkara zapota (L.) P.Royen",
+    #     Output.Taxon == "Poeppigia procera C.Presl"            ~ "Poeppigia procera (Poepp. ex Spreng.) C.Presl",
+    #     Output.Taxon == "Aniba canellila Mez"                  ~ "Aniba canellila (Kunth) Mez",
+    #     TRUE ~ Output.Taxon
+    #   ),
+    #   Status = case_when(
+    #     Input.Taxon == "Malus sieversii (Ledeb.) M.Roem." ~ "accepted",
+    #     TRUE ~ Status
+    #   )
+    # )
   
   ## Checks
   # lcvp_cor %>% filter(str_detect(Output.Taxon, "Dalbergia nitidula"))
@@ -263,27 +263,21 @@ if (!(wfo_backbone_gbif %in% list.files(recursive = T))) {
 ## - Download search summary. 
 ## - Find zip when file.choose() called
 
-
-if (!(iucn_checklist %in% list.files(recursive = T))) {
+make_backbone_iucn <- function(.path) {
 
   message("Creating IUCN checklist from manual download...")
   time1 <- Sys.time()
 
-  ## Path to IUCN Manual download
-  iucn_download <- file.choose() ## "C:\\Users\\Admin\\Downloads\\redlist_species_data_e73c2f06-3056-4897-9fb3-824f5b326757.zip"
-  
   ## Unzip files to tempdir()
-  unzip(iucn_download, exdir = file.path(tempdir(), "iucn"), files = c("taxonomy.csv", "synonyms.csv", "simple_summary.csv"))
-  
-  list.files(file.path(tempdir(), "iucn"))
+  unzip(.path, exdir = file.path(tempdir(), "iucn"), files = c("taxonomy.csv", "synonyms.csv", "simple_summary.csv"))
   
   ## Read files
-  iucn        <- list.files(file.path(tempdir(), "iucn"), full.names = TRUE) %>% map(read_csv)
+  iucn        <- list.files(file.path(tempdir(), "iucn"), full.names = TRUE) %>% map(read_csv, show_col_types = F)
   names(iucn) <- list.files(file.path(tempdir(), "iucn")) %>% str_remove(".csv")
   
   ## Checks 
-  table(iucn$synonyms$infraType)
-  table(iucn$simple_summary$redlistCategory)
+  # table(iucn$synonyms$infraType)
+  # table(iucn$simple_summary$redlistCategory)
   
   ## Red list codes: ND added by Lauri, no data (!= not evaluated)
   iucn_codes <- tibble(
@@ -358,7 +352,7 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   write_csv(iucn_taxo, file = iucn_checklist)
   
   ## !!! Remove tmp objects
-  rm(iucn_download, iucn, iucn_codes, iucn_conv, iucn_redlist, iucn_taxo)
+  rm(iucn, iucn_codes, iucn_conv, iucn_redlist, iucn_taxo)
   unlink(file.path(tempdir(), "iucn"), recursive = T)
   ## !!!
 
@@ -366,6 +360,6 @@ if (!(iucn_checklist %in% list.files(recursive = T))) {
   dt <- round(as.numeric(time2-time1, units = "secs"))
   message(paste0("...Done", " - ", dt, " sec."))
 
-} ## End if wfo_backbone_uicn
+} ## End make_backbone_iucn()
 
 

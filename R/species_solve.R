@@ -37,6 +37,7 @@
 ## ---                 outputs are written while only the harmonized outputs are returned by the function. 
 ## ---  .multicore   : logical. if TRUE, relies on parallel, future, furrr and carrier packages. Use plan(multisession) 
 ## ---                 as compatible with all OS types.
+## ---  .use_iucn    : Logical. If TRUE and "data/iucn_checklist.csv" doesn't exist, or path to IUCN red list (manual download by user or shinyapp admin)
 ## ---  .ref_lcvp    : NULL or path to file LCVP backbone for WFO.match(). Required when all services or "wfo_lcvp" are used.
 ## ---  .ref_wfo     : NULL or path to file WFO backbone for WFO.match(). Required when all services or "wfo" are used.
 ## ---  .ref_ncbi    : NULL or path to file NCBI backbone for WFO.match(). Required when all services or "wfo_ncbi" are used. 
@@ -44,19 +45,18 @@
 ## ---  .ref_gbif    : NULL or path to file GBIF backbone for WFO.match(). Required when all services or "wfo_gbif" are used. 
 ## ---                 Data comes from taxadb, may not be the latest version.
 ## ---  .ref_gts     : NULL or path to Global Tree Search
-## ---  .ref_iucn    : NULL or path to IUCN red list (manual download by user or shinyapp admin)
 
 species_solve <- function(.path, 
                           .how_to     = "wfo_lcvp", 
                           .with_lcvp  = FALSE, 
                           .save_table = NULL, 
                           .multicore  = TRUE,
+                          .use_iucn   = TRUE,
                           .ref_lcvp   = NULL, 
                           .ref_wfo    = NULL, 
                           .ref_ncbi   = NULL, 
                           .ref_gbif   = NULL, 
                           .ref_gts    = NULL,
-                          .ref_iucn   = NULL,
                           .tx_src     = NULL) {
   
   time_start <- Sys.time()
@@ -64,7 +64,7 @@ species_solve <- function(.path,
   message("---")
   message("Initiating Taxonomic Resolution.")
   message("---")
-
+  
   
   
   ## ************************************************************************
@@ -77,6 +77,7 @@ species_solve <- function(.path,
   stopifnot(str_ends(.path, "csv"))
   stopifnot(.how_to %in% c("compare", "integrate", "lcvp", "wfo_lcvp", "wfo", "wfo_gbif", "wfo_ncbi", "tropicos"))
   stopifnot(is.logical(.multicore))
+  stopifnot(is.logical(.use_iucn))
   
   ## Check if packages installed (https://stackoverflow.com/questions/9341635/check-for-installed-packages-before-running-install-packages)
   stopifnot(nzchar(system.file(package = "furrr"))) ## future and parallel are loaded from furrr
@@ -100,6 +101,26 @@ species_solve <- function(.path,
   
   ## ************************************************************************
   
+  ## Check for iucn_checklist and prepare if necessary
+  if (.use_iucn & !(iucn_checklist %in% list.files(recursive = T))) {
+    
+    ## Path to IUCN Manual download 
+    #iucn_download <- file.choose() ## "C:\\Users\\Admin\\Downloads\\redlist_species_data_e73c2f06-3056-4897-9fb3-824f5b326757.zip"
+    
+    iucn_download <- tryCatch({file.choose()}, error = function(ex) {})
+    
+    if (!is.null(iucn_download)) {
+      
+      make_backbone_iucn(.path = iucn_download)
+      
+    } else {
+      
+      message("IUCN Red List data not found. Continuing without it...")
+      .use_iucn = FALSE
+      
+    } ## End if
+    
+  } ## End if
   
   ## Get number of cores for multicore sub-functions
   n_cores <- parallel::detectCores() - 1
@@ -570,7 +591,7 @@ species_solve <- function(.path,
   
   ## *** Prepare IUCN red list status ---------------------------------------
   
-  if(!is.null(.ref_iucn)) {
+  if(.use_iucn) {
     
     ## Red list codes: ND added by Lauri, no data (!= not evaluated)
     iucn_codes <- tibble(
@@ -581,7 +602,7 @@ species_solve <- function(.path,
                      "Extinct in the Wild", "Extinct")
     )
     
-    iucn <- read_csv(.ref_iucn, show_col_types = F)
+    iucn <- read_csv(iucn_checklist, show_col_types = F)
     
   }
   
@@ -651,7 +672,7 @@ species_solve <- function(.path,
     
     ## Add IUCN status
     {
-      if (!is.null(.ref_iucn)) {
+      if (.use_iucn) {
           left_join(., iucn %>% select(sc_name, iucn_id = id, iucn_code), by = c("accepted_name" = "sc_name")) %>%
           mutate(iucn_code = if_else(is.na(iucn_code), "ND", iucn_code)) %>%
           left_join(iucn_codes, by = "iucn_code")
@@ -691,7 +712,7 @@ species_solve <- function(.path,
     summarise(status_count  = n()) %>%
     mutate(`-` = NA)
   
-  if (!is.null(.ref_iucn)) {
+  if (.use_iucn) {
     stat3b <- species_final %>% 
       mutate(iucn_label = fct_reorder(iucn_label, iucn_num)) %>% 
       group_by(iucn_label) %>% 
@@ -725,6 +746,16 @@ species_solve <- function(.path,
   }
   
   
+  ## Make a table to show results
+  if (.use_iucn) { 
+    show_results <- species_final %>%
+      select(-gts_num, -sc_name, -accepted_genus, -iucn_id, -iucn_num, -iucn_code) %>% 
+      mutate(fuzzy_dist = as.integer(fuzzy_dist))
+    } else { 
+      show_results <- species_final %>%
+        select(-gts_num, -sc_name, -accepted_genus) %>% 
+        mutate(fuzzy_dist = as.integer(fuzzy_dist))
+    }
   
   ## ************************************************************************
   
@@ -741,7 +772,11 @@ species_solve <- function(.path,
   message(paste0("Taxonomic resolution completed in ", hh, " hours ", mm, " mins ", ss, " sec."))
   message("********************")
   
-  out <- list(tab_final = tab_final, species_final = species_final, stat1 = stat1, stat2 = stat2.1, stat3 = stat3, valid = TRUE)
+  out <- list(
+    tab_final = tab_final, species_final = species_final, show_results = show_results, 
+    stat1 = stat1, stat2 = stat2.1, stat3 = stat3, 
+    valid = TRUE
+    )
   out
   
 } ## End function species_solve()

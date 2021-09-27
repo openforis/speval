@@ -17,6 +17,7 @@ shinyUI(fluidPage(
   
   # Tooltip texts end   ****************
   shinyjs::useShinyjs(),
+  shinyWidgets::useSweetAlert(),
   
   # remove shiny "red" warning messages on GUI
   tags$style(type="text/css",
@@ -114,8 +115,9 @@ shinyUI(fluidPage(
                 condition = "output.file_valid",
 
                 checkboxInput("opt_multicore", "Multicore processing", TRUE ),
+                checkboxInput("opt_iucn", "Include IUCN Red List status", FALSE ),
                 actionButton("run_analyse", "Run validation", class = "btn-primary"),
-                br(), br(), br(), br(),
+                br(), br(), br(),
                 fluidRow(
                   tableOutput("console_text"), 
                   style = 'height:400px; witdh=100%; background-color: #000000; 
@@ -154,6 +156,7 @@ shinyUI(fluidPage(
                        tabName = "res_table1",
                        tags$br(),
                        downloadButton('downloadData', 'Download'),
+                       downloadButton('downloadDetails', 'Download details results'),
                        fluidRow(tableOutput("result_contents"), style='height:650px; width:100%; background-color: #FFFFFF;overflow: scroll')
               ),
               tabPanel("Stat1",

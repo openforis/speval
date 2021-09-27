@@ -17,7 +17,7 @@ shinyServer(function(input, output, session) {
   
   ## Disclaimer #############################################################
   
-  sendSweetAlert(
+  shinyWidgets::sendSweetAlert(
     session = session,
     title =  NULL,
     text = div(
@@ -79,6 +79,48 @@ shinyServer(function(input, output, session) {
   }) ## End observeEvent
   
   
+  ## Show IUCN Downloading options ##########################################
+  observeEvent(input$opt_iucn, {
+    
+    if (isTruthy(input$opt_iucn)) {
+      
+      #shinyWidgets::ask_confirmation(
+      shinyWidgets::sendSweetAlert(
+        #inputId = "iucn_confirm",
+        session = session,
+        title = "",
+        text = div(
+          "If IUCN Red List hasn't been uploaded before, the species
+        validation script will prompt a popup window to ask for a zip file.",
+          br(), br(),
+          "The zip file needs to be manually downloaded from the IUCN
+        Red List website.",
+          br(), br(),
+          "Instructions:",
+          tags$ol(
+            tags$li("Go to: https://www.iucnredlist.org/"),
+            tags$li("Create an account/login"),
+            tags$li("Go to advanced search and filter results by:"),
+            tags$ul(
+              tags$li("Type: species"),
+              tags$li("Taxonomy: filter  Plantae > Tracheophyta"),
+              tags$li("include Species, Subspecies and varieties, Subpopulations"),
+            ),
+            tags$li("Download search summary"),
+          ),
+          "Have you successfully downloaded the IUCN Red List?",
+          align= "left", style = "font-size:small"
+        ),
+        type = "info",
+        html = TRUE,
+        closeOnClickOutside = FALSE
+      )
+      
+    }
+    
+  })
+
+  
   
   ## Confirm run the validation #############################################
   
@@ -89,8 +131,8 @@ shinyServer(function(input, output, session) {
     shinyjs::hide("after_valid")
     
     ## Confirm run the validation
-    ask_confirmation(
-      inputId = "shinyalert",
+    shinyWidgets::ask_confirmation(
+      inputId = "run_confirm",
       title = "",
       text  = h4("Run the species validation (Erase previous results)?"),
       type = "",
@@ -106,9 +148,10 @@ shinyServer(function(input, output, session) {
   
   ## Run the validation master function #####################################
  
-  observeEvent(input$shinyalert, {
+  observeEvent(input$run_confirm, {
     
-    req(input$shinyalert)
+    #req(input$run_confirm, input$iucn_confirm)
+    req(input$run_confirm)
 
     if ("scientific_name" %in% names(check_table())) {
       
@@ -117,17 +160,17 @@ shinyServer(function(input, output, session) {
       species_results$output <- withCallingHandlers({
         species_solve(
           .path       = input$file1$datapath,
-          .how_to     = "compare", #"wfo_ncbi", 
+          .how_to     = "wfo_ncbi", #"compare"
           .with_lcvp  = FALSE,
           .save_table = NULL,
           .multicore  = input$opt_multicore,
+          .use_iucn   = input$opt_iucn,
           .ref_lcvp   = wfo_backbone_lcvp,
           .ref_wfo    = wfo_file,
           .tx_src     = src_tropicos,
           .ref_ncbi   = wfo_backbone_ncbi,
           .ref_gbif   = wfo_backbone_gbif,
-          .ref_gts    = gts_file,
-          .ref_iucn   = iucn_checklist
+          .ref_gts    = gts_file
         )
       },
       message = function(m) {
@@ -168,18 +211,21 @@ shinyServer(function(input, output, session) {
   ## Prepare outputs ########################################################
 
   observeEvent(species_results$valid, {
-
+      
     ## Species solved table
-    output$result_contents <- renderTable({
-      species_results$output$species_final %>% 
-        select(-gts_num, -iucn_id, -iucn_num, -iucn_code, -sc_name, -accepted_genus) %>%
-        mutate(fuzzy_dist = as.integer(fuzzy_dist))
-    })
+    output$result_contents <- renderTable({ 
+      species_results$output$show_results 
+      })
 
     output$downloadData <- downloadHandler(
       filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-results.csv") },
       content  <- function(file) { readr::write_csv(species_results$output$species_final, file) }
       )
+    
+    output$downloadDetails <- downloadHandler(
+      filename <- function() { paste0(input$file1$name %>% str_remove(".csv"), "-details.csv") },
+      content  <- function(file) { readr::write_csv(species_results$output$tab_final, file) }
+    )
 
     ## Stat1
     output$stat1 <- renderTable({
