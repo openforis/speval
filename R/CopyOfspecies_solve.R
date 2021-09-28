@@ -21,11 +21,12 @@
 
 ## --- Function parameters:
 ## ---  .path: path to species list to solve
-## ---  .how_to: Either "compare" to run the input species list on all selected services, 
-## ---           or "integrate" to run the species list on all services but submit only the 
-## ---           unmatched and unresolved species from service n to service n+1.
-## --- .services:  
-## ---    "lcvp"     : Run LCVP with lcvp() matching algorithm.
+## ---  .how_to: how to combine or not the taxonomic name resolution services:
+## ---    "compare"  : Run the input species list on all services. Doesn't use LCVP(), 
+## ---                 its backbone table is used with WFO.match(), unless .with_lcvp == TRUE.
+## ---    "integrate": Run the species list on all services but submit only the unmatch and unresolved species from service n to service n+1.
+## ---                 (doesn't use LCVP(), backbone table used with WFO.match()).
+## ---    "lcvp"     : Run LCVP.
 ## ---    "wfo_lcvp" : Run WFO algorithm with LCVP table as backbone.
 ## ---    "wfo"      : Run WFO.
 ## ---    "tropicos" : Run Tropicos.
@@ -46,8 +47,8 @@
 ## ---  .ref_gts     : NULL or path to Global Tree Search
 
 species_solve <- function(.path, 
-                          .how_to     = "compare", 
-                          .services   = "wfo_lcvp", 
+                          .how_to     = "wfo_lcvp", 
+                          .with_lcvp  = FALSE, 
                           .save_table = NULL, 
                           .multicore  = TRUE,
                           .use_iucn   = TRUE,
@@ -74,17 +75,21 @@ species_solve <- function(.path,
   
   stopifnot(is.character(.path))
   stopifnot(str_ends(.path, "csv"))
-  stopifnot(.how_to %in% c("compare", "integrate"))
+  stopifnot(.how_to %in% c("compare", "integrate", "lcvp", "wfo_lcvp", "wfo", "wfo_gbif", "wfo_ncbi", "tropicos"))
   stopifnot(is.logical(.multicore))
   stopifnot(is.logical(.use_iucn))
   
   ## Check if packages installed (https://stackoverflow.com/questions/9341635/check-for-installed-packages-before-running-install-packages)
   stopifnot(nzchar(system.file(package = "furrr"))) ## future and parallel are loaded from furrr
-  if ("lcvp" %in% .services)     stopifnot(nzchar(system.file(package = "lcvplants")))
-  if ("wfo_lcvp" %in% .services) stopifnot(nzchar(system.file(package = "WorldFlora")))
-  if ("wfo" %in% .services)      stopifnot(nzchar(system.file(package = "WorldFlora")))
-  if ("tropicos" %in% .services) stopifnot(nzchar(system.file(package = "taxize")))
-
+  if (.how_to %in% c("compare", "integrate", "lcvp"))     stopifnot(nzchar(system.file(package = "lcvplants")))
+  if (.how_to %in% c("compare", "integrate", "wfo_lcvp")) stopifnot(nzchar(system.file(package = "WorldFlora")))
+  if (.how_to %in% c("compare", "integrate", "wfo"))      stopifnot(nzchar(system.file(package = "WorldFlora")))
+  if (.how_to %in% c("compare", "integrate", "tropicos")) stopifnot(nzchar(system.file(package = "taxize")))
+  
+  ## Check if reference files for WFO.match() exist
+  if (!is.null(.save_table) & .how_to %in% c("compare", "integrate", "wfo_lcvp")) stopifnot(file.exists(.ref_lcvp))
+  if (!is.null(.save_table) & .how_to %in% c("compare", "integrate", "wfo"))      stopifnot(file.exists(.ref_wfo))
+  
   ## Check if path to save tables exists
   if (!is.null(.save_table)) stopifnot(dir.exists(.save_table))
   
@@ -147,38 +152,41 @@ species_solve <- function(.path,
   
   ## *** 1a. LCVP() ---------------------------------------------------------
   
-  if ("lcvp" %in% .services & length(species_notsolved) != 0) {
+  if (.with_lcvp | .how_to == "lcvp") {
     
-    message("Solve with Leipzig Catalogue of Vascular Plants...")
+    if (.how_to %in% c("compare", "integrate", "lcvp")) {
+      
+      message("Solve with Leipzig Catalogue of Vascular Plants...")
+      
+      ## Select data
+      ## --- Data is species_notsolved as this is the first service
+      
+      ## Run service
+      res_lcvp <- solve_lcvp(
+        .taxon      = species_notsolved, 
+        .save_table = .save_table, 
+        .filename   = filename, 
+        .n_cores    = n_cores
+      )
+      
+      print(table(res_lcvp$tab$status, useNA = "always"))
+      notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
+      
+      ## Update species_notsolved
+      if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
+ 
+    } else {
+      
+      res_lcvp <- list(tab = NULL, dt = NULL)
+      
+    } ## End if LCVP
     
-    ## Select data
-    ## --- Data is species_notsolved as this is the first service
-    
-    ## Run service
-    res_lcvp <- solve_lcvp(
-      .taxon      = species_notsolved, 
-      .save_table = .save_table, 
-      .filename   = filename, 
-      .n_cores    = n_cores
-    )
-    
-    print(table(res_lcvp$tab$status, useNA = "always"))
-    notsolved_lcvp <- res_lcvp$tab %>% filter(status %in% c("noref", "unresolved")) %>% pull(sc_name)
-    
-    ## Update species_notsolved
-    if (.how_to == "integrate") species_notsolved <- setdiff(species_notsolved, notsolved_lcvp)
-    
-  } else {
-    
-    res_lcvp <- list(tab = NULL, dt = NULL)
-    
-  } ## End if LCVP
-    
-    
+  } ## End if .with_lcvp
+  
   
   ## *** 1b. WFO.match() with LCVP backbone ---------------------------------
   
-  if ("wfo_lcvp" %in% .services & length(species_notsolved) != 0) {
+  if (.how_to %in% c("compare", "integrate", "wfo_lcvp") & length(species_notsolved != 0)) {
     
     message("Solve with Leipzig Catalogue of Vascular Plants...")
     
@@ -208,7 +216,7 @@ species_solve <- function(.path,
   
   ## *** 2. WFO.match() with WFO backbone -----------------------------------
   
-  if ("wfo" %in% .services & length(species_notsolved) != 0) {
+  if (.how_to %in% c("compare", "integrate", "wfo") & length(species_notsolved != 0)) {
     
     message("Solve with World Flora Online...")
     
@@ -238,7 +246,7 @@ species_solve <- function(.path,
   
   ## *** 3. Tropicos --------------------------------------------------------
   
-  if ("tropicos" %in% .services & length(species_notsolved) != 0) {
+  if (.how_to %in% c("compare", "integrate", "tropicos") & length(species_notsolved != 0)) {
     
     message("Solve with Tropicos - Missouri Botanical Garden...")
     
@@ -265,7 +273,7 @@ species_solve <- function(.path,
   
   
   ## *** 4. WFO.match() with NCBI backbone ----------------------------------
-  if ("wfo_ncbi" %in% .services & length(species_notsolved) != 0) {
+  if (.how_to %in% c("compare", "integrate", "wfo_ncbi") & length(species_notsolved != 0)) {
     
     message("Solve with National Center for Biotechnology Information...")
     ## Run service
@@ -294,7 +302,7 @@ species_solve <- function(.path,
   
   
   ## *** 5. WFO.match() with GBIF backbone ----------------------------------
-  if ("wfo_gbif" %in% .services & length(species_notsolved) != 0) {
+  if (.how_to %in% c("compare", "integrate", "wfo_gbif")) {
     
     message("Solve with Global Biodiversity Information Facility...")
     
@@ -422,7 +430,7 @@ species_solve <- function(.path,
   ## *** Regroup unique solutions ------------------------------------------- 
   
   ## First process: if LCVP() in the process use the service after to favor lcvp_WFO.match()
-  first_process <- if_else("lcvp" %in% .services, stat1$process[4], stat1$process[3])
+  first_process <- if_else(.with_lcvp, stat1$process[4], stat1$process[3])
   
   ## Unique solutions
   out1 <- out_tab %>%
@@ -766,7 +774,8 @@ species_solve <- function(.path,
   
   out <- list(
     tab_final = tab_final, species_final = species_final, show_results = show_results, 
-    stat1 = stat1, stat2 = stat2.1, stat3 = stat3
+    stat1 = stat1, stat2 = stat2.1, stat3 = stat3, 
+    valid = TRUE
     )
   out
   

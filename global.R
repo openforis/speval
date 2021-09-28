@@ -154,8 +154,25 @@ source("R/make_backbone.R", local = T)
 # os = get_os()
 # if (os == "linux") library('doMC')
 
+name_backbones <- setNames(
+  c("lcvp", "wfo_lcvp", "wfo", "tropicos", "wfo_ncbi", "wfo_gbif"),
+  c("LCVP with lcvp() - Not recommended",
+    "LCVP with WFO.match() - Recommended",
+    "WFO with WFO.match()",
+    "Tropicos (online, matches genus alone)",
+    "NCBI with WFO.match()",
+    "GBIF with WFO.match()"
+    )
+  )
 
-
-
+# name_backbones <- setNames(
+#   c("wfo_lcvp", "wfo", "tropicos", "wfo_ncbi", "wfo_gbif"), 
+#   c("Leipzig Catalogue of Vascualr Plants",
+#     "World Flora Online",
+#     "Tropicos (matches genus alone)",
+#     "National Center for Biotechnology Information",
+#     "Global Biodiversity Information Facility"
+#   )
+# )
 
 

@@ -113,21 +113,32 @@ shinyUI(fluidPage(
               br(),
               conditionalPanel(
                 condition = "output.file_valid",
-
+                
+                shinyWidgets::pickerInput(
+                    inputId  = "backbones",
+                    label    = "Which backbones to use?", 
+                    choices  = name_backbones, ## See global.R for the object name_backbones
+                    selected = "wfo_lcvp",
+                    options = list(
+                      `actions-box` = TRUE), 
+                    multiple = TRUE
+                  ),
+                
                 checkboxInput("opt_multicore", "Multicore processing", TRUE ),
                 checkboxInput("opt_iucn", "Include IUCN Red List status", FALSE ),
+                
                 actionButton("run_analyse", "Run validation", class = "btn-primary"),
                 br(), br(), br(),
                 fluidRow(
                   tableOutput("console_text"), 
-                  style = 'height:400px; witdh=100%; background-color: #000000; 
-                  color: #FFFFFF; margin-bottom: 30px; padding: 25px; overflow-y: scroll'
+                  style = 'height:380px; witdh=100%; background-color: #000000; 
+                  color: #FFFFFF; margin-bottom: 15px; padding: 25px; overflow-y: scroll'
                 ),
                 hidden(
                   div(
                     id = "after_valid",
-                    h4(icon("arrow-right"), "Continue to results"),
-                    HTML("&nbsp;"),
+                    #h4(icon("arrow-right"), "Continue to results"),
+                    icon("arrow-right"), HTML("Continue to Results: &nbsp;"),
                     actionButton("to_results", "Results")
                   )
                 )

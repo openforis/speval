@@ -153,15 +153,15 @@ shinyServer(function(input, output, session) {
     #req(input$run_confirm, input$iucn_confirm)
     req(input$run_confirm)
 
-    if ("scientific_name" %in% names(check_table())) {
+    if ("scientific_name" %in% names(check_table()) & !is.null(input$backbones)) {
       
       shinyjs::html(id = "console_text", "")
       
       species_results$output <- withCallingHandlers({
         species_solve(
           .path       = input$file1$datapath,
-          .how_to     = "wfo_ncbi", #"compare"
-          .with_lcvp  = FALSE,
+          .how_to     = "compare", ## Hard coded here for now, accept "compare" or "integrate". 
+          .services   = input$backbones,
           .save_table = NULL,
           .multicore  = input$opt_multicore,
           .use_iucn   = input$opt_iucn,
@@ -182,9 +182,16 @@ shinyServer(function(input, output, session) {
     } else {
       
       shinyjs::html(id = "console_text", "")
-      shinyjs::html(id = "console_text", html = "The input file doesn't have 'scientific_name' column. <br>")
-      shinyjs::html(id = "console_text", html = "Please re-upload a CSV file with the species list under a column named: 'scientific_name'. <br>", add = TRUE)
       
+      if (!("scientific_name" %in% names(check_table()))) {
+        shinyjs::html(id = "console_text", html = "The input file doesn't have 'scientific_name' column. <br>")
+        shinyjs::html(id = "console_text", html = "Please re-upload a CSV file with the species list under a column named: 'scientific_name'. <br>", add = TRUE)
+      } 
+      
+      if (is.null(input$backbones)) {
+        shinyjs::html(id = "console_text", html = "No service selected. <br>")
+        shinyjs::html(id = "console_text", html = "Please select at least one service. <br>", add = TRUE)
+      }
       species_results$valid <- FALSE
       
     } ## End if
