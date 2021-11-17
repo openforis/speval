@@ -461,6 +461,20 @@ species_solve <- function(.path,
   ## Combine unique solutions and unsolved
   species_solved <- bind_rows(out1, out2, out3)
   
+  ## check 'accepted_name' cases where
+  ## a) status==synonym, and check against input data
+  sp_list1  <- out1 %>% filter(status == "synonym" & !is.na(accepted_name)) %>% pull(accepted_name)
+  outstat_1 <- sum(table(sp_list1[which(sp_list1 %in% species_cleaned$input_name)]))
+  if (is.na(outstat_1)) { outstat_1 <-0 }
+  rm(sp_list1)
+  
+  ## total number of duplicates in 'accepted_name' 
+  
+  out1r     <- out1 %>% filter(status == "accepted" | status == "synonym") %>% select(accepted_name) 
+  outstat_2 <- sum(table(out1r$accepted_name) - 1 )
+  rm(out1r)
+  
+  
   ## Check
   #species_solved %>% group_by(sc_name) %>% summarise(count = n()) %>% filter(count > 1) %>% pull(sc_name)
   
@@ -484,7 +498,7 @@ species_solve <- function(.path,
   
   ## *** STAT2: Numbers after first round of services -----------------------
   
-  stat2 <- rbind(
+    stat2 <- rbind(
     c("Initial number of inputs", length(species_cleaned$input_name)                                ),
     c("Unique number of inputs" , length(unique(species_cleaned$input_name))                        ),
     c("Number of cleaned inputs", length(unique(species_cleaned$input_ready))                       ),
@@ -496,7 +510,8 @@ species_solve <- function(.path,
     c(" - conflicts (*)"        , nrow(out3)                                                        ),
     c("Remaining to solve"      , length(species_notsolved)                                                ),
     c(""                                             , ""),
-    c("(*) first process in stat1 used as reference.", "")
+    c("(*) first process in stat1 used as reference.", ""),
+    c(""                                             , "")
   )
   
   stat2 <- tibble(step = stat2[,1], count = stat2[,2])
@@ -691,6 +706,13 @@ species_solve <- function(.path,
   } else {
     stat2.1 <- stat2
   }
+  
+  stat2.1 <- rbind(stat2.1,
+    c("Analysis on column accepted_name:"                    , ""),
+    c(" - number of cases in input (status=synonym):"        , outstat_1 ),
+    c(" - number of duplicates (status=accepted or synonym):", outstat_2 )
+  )
+  
   
   ## *** STAT3: tables ------------------------------------------------------
   
