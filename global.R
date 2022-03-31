@@ -166,8 +166,9 @@ source("R/make_backbone.R", local = T)
 #   )
 
 name_backbones <- setNames(
-  c("wfo_lcvp", "wfo", "tropicos", "wfo_ncbi", "wfo_gbif"),
-  c("Leipzig Catalogue of Vascualr Plants",
+  c("lcvp", "wfo_lcvp", "wfo", "tropicos", "wfo_ncbi", "wfo_gbif"),
+  c("Leipzig Catalogue of Vascular Plants",
+    "LCVP-WFO algorythm",
     "World Flora Online",
     "Tropicos (also matches genus alone)",
     "National Center for Biotechnology Information",

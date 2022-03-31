@@ -21,7 +21,7 @@
 ## ---    .filename  : default "". Input file name to add to saved outputs. 
 ## ---    .n_cores   : the number of cores to be used for parallel computing.
 
-solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1) {
+solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .multicore = TRUE, .n_cores = 1) {
   
   ## Vector of infraspecies abbreviations
   infrasp_abb <- c("subsp.", "ssp.", "var.", "subvar.", "f.", "subf.", "forma")
@@ -36,7 +36,24 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
   message("...Running Leipzig Catalogue of Vascular Plants.")
   time1 <- Sys.time()
   
-  solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, genus_search = T, synonyms = F, max.cores = .n_cores)
+  if (.multicore) {
+    
+    ## lcvplant 1.1.1
+    # solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, genus_search = T, synonyms = F, max.cores = .n_cores)
+    
+    ## lcvplant 2.0 NEED TO ADD MULTICORE
+    solved_lcvp <- lcvplants::lcvp_search(input, max_distance = 2, genus_fuzzy = T, show_correct = T, grammar_check = T)
+    #solved_lcvp <- lcvplants::lcvp_fuzzy_search(input, max_distance = 2, genus_fuzzy = T)
+    
+  } else {
+    
+    ## lcvplant 1.1.1
+    #solved_lcvp <- lcvplants::LCVP(input, max.distance = 2, genus_search = T, synonyms = F, max.cores = 1)
+    
+    ## lcvplant2.0
+    solved_lcvp <- lcvplants::lcvp_search(input, max_distance = 2, genus_fuzzy = T, show_correct = T, grammar_check = T)
+    #solved_lcvp <- lcvplants::lcvp_fuzzy_search(input, max_distance = 2, genus_fuzzy = T)
+  }
   
   time2 <- Sys.time()
   dt    <- round(as.numeric(time2-time1, units = "secs"))
@@ -49,20 +66,20 @@ solve_lcvp <- function(.taxon, .save_table = NULL, .filename = "", .n_cores = 1)
   
   ## --- Harmonize ---
   solved_out <- tibble(sc_name = .taxon) %>%
-    left_join(solved_lcvp, by = c("sc_name" = "Submitted_Name")) %>%
+    #left_join(solved_lcvp, by = c("sc_name" = "Submitted_Name")) %>% #changed v2.0
+    left_join(solved_lcvp, by = c("sc_name" = "Search")) %>%
     mutate(
-      LCVP_Accepted_Taxon = if_else(Status == "unresolved", NA_character_, LCVP_Accepted_Taxon),
+      #LCVP_Accepted_Taxon = if_else(Status == "unresolved", NA_character_, LCVP_Accepted_Taxon), #changed v2.0
+      LCVP_Accepted_Taxon = if_else(Status == "unresolved", NA_character_, Output.Taxon),
       
       ## Calculate harmonized indicators
-      fuzzy_dist    = Insertion + Deletion + Substitution,
-      fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE),
-      # fuzzy_res     = if_else(
-      #   Infrasp == "species", 
-      #   paste(Genus, Species, sep = " "),
-      #   paste(Genus, Species, Infrasp, Infraspecies, sep = " ")
-      #   ),
+      #fuzzy_dist    = Insertion + Deletion + Substitution, #changed v2.0
+      fuzzy_dist    = NA_real_,
+      #fuzzy         = if_else(fuzzy_dist > 0, TRUE, FALSE), #changed v2.0
+      fuzzy         = Correct,
       status        = if_else(Status == "" | is.na(Status), "noref", Status),
-      score         = Score,
+      #score         = Score,
+      score         = NA_character_,
       accepted_id   = NA_character_,
       refdata_id    = "lcvp",
       refdata       = "Leipzig Catalogue of Vascular Plants",
