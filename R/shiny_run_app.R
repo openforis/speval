@@ -1,10 +1,7 @@
-#' Run Monte Carlo for REDD+ uncertainty's shiny app
+#' Run the species name validation tool
 #'
-#' @description Starts a R Shiny application that guide users to fill in context and
-#'              land use changes for forest related greenhouse gas emissions and removals.
-#'              Inputs include distribution parameters for various distribution then the app
-#'              returns error propagation and sensitivity analysis of the overall uncertainty
-#'              for GHG estimates.
+#' @description Starts a R Shiny application that let users upload a list of species names,
+#'              check them for typos and validate them against several major taxonomic backbones.
 #'
 #' @param ... arguments to pass to shinyApp
 #'
@@ -20,7 +17,7 @@
 #' }
 #'
 #' @export
-shiny_run_MCredd <- function(...) {
+shiny_run_app <- function(...) {
 
   ## GLOBAL ####################################################################
   ## Initiate translation

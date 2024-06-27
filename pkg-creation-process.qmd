@@ -1,0 +1,71 @@
+---
+title: "Package creation process"
+format: html
+editor: visual
+execute:
+  eval: false
+---
+
+## Initiate package creation
+
+```{r}
+
+## Create package in current RR project directory
+usethis::create_package(getwd())
+
+## Add pkgdown skeleton
+usethis::use_pkgdown()
+
+```
+
+## Add license
+
+```{r}
+
+usethis::use_mit_license(copyright_holder = "Gael Sola, Lauri Vesa, Javier Garcia Perez")
+```
+
+## Add skeleton
+
+The skeleton includes scripts for shiny modules and translation out of the box i the following directories:
+
+-   home folder:
+
+    -   *app.R*: contains code to launch the app on shinyapps.io
+
+-   R:
+
+    -   functions scripts (file name = function name)
+
+    -   shiny modules scripts (file names like *mod\_\*UI.R* and *mod\_\*\_server.R)*
+
+    -   *helpers.R*: functions useful for the package development but not exported.
+
+    -   zzz.R function to make the asset directory from each user package libriary available to the shiny app
+
+-   inst/assets:
+
+    -   images, translation and other files useful for the app.
+
+------------------------------------------------------------------------
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
