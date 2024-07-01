@@ -3,7 +3,7 @@
 #' @description Starts a R Shiny application that let users upload a list of species names,
 #'              check them for typos and validate them against several major taxonomic backbones.
 #'
-#' @param ... arguments to pass to shinyApp
+#' @param ... arguments to pass to `shinyApp()`
 #'
 #' @import shiny
 #' @import bslib
@@ -12,12 +12,12 @@
 #' @examples
 #' if (interactive()) {
 #'
-#' shiny_run_MCredd()
+#' shiny_run_speval()
 #'
 #' }
 #'
 #' @export
-shiny_run_app <- function(...) {
+shiny_run_speval <- function(...) {
 
   ## GLOBAL ####################################################################
   ## Initiate translation

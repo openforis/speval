@@ -47,6 +47,50 @@ The skeleton includes scripts for shiny modules and translation out of the box i
 
     -   images, translation and other files useful for the app.
 
+## Add packages dependencies to DESCRIPTION
+
+```{r}
+
+## Data analysis
+#usethis::use_package("magrittr")
+usethis::use_package("readr")
+usethis::use_package("tidyselect")
+usethis::use_package("dplyr")
+usethis::use_package("ggplot2")
+#usethis::use_package("tibble")
+#usethis::use_package("forcats")
+usethis::use_package("purrr")
+usethis::use_package("stringr")
+usethis::use_package("rlang")
+# usethis::use_package("tidyverse", type = "depends")
+usethis::use_package("readxl")
+
+## Shiny
+usethis::use_package("shiny")
+usethis::use_package("shinyjs")
+usethis::use_package("shinyWidgets")
+usethis::use_package("bslib")
+
+## Geospatial
+# usethis::use_package("sf")
+# usethis::use_package("terra")
+# usethis::use_package("units")
+```
+
+## Document, load and test
+
+```{r}
+devtools::document()
+devtools::load_all()
+shiny_run_speval()
+
+## and / or
+
+devtools::install()
+library(speval)
+shiny_run_speval()
+```
+
 ------------------------------------------------------------------------
 
 ## Quarto
