@@ -56,6 +56,8 @@ shiny_run_speval <- function(...) {
       src = c(href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/"),
       stylesheet = "css/flag-icons.min.css"
     ),
+    #tags$head(includeHTML("assets/add-favicon.html")),
+    tags$head(includeHTML(system.file("assets/add-favicon.html", package = "speval"))),
     # tags$head(includeHTML("ga-tracker-draft-head.html")),
     # leafletjs,
     ## UI elements -------------------------------------------------------------
@@ -71,10 +73,10 @@ shiny_run_speval <- function(...) {
           .noWS = "before-end"
           ),
         #img(src="assets/arena-helpers3.png", height = '60px'),
-        i18n$t("Monte Carlo for REDD+"),
+        i18n$t("Species name validation tool"),
         style = "display:inline;font-color: black !important"
         ),
-      window_title = "Monte Carlo for REDD+",
+      window_title = "species validation",
       theme = bs_theme(
         version = 5,
         bootswatch = "minty",
