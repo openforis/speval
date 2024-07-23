@@ -3,6 +3,11 @@
   "languages": ["en", "fr", "sp"],
   "translation": [
     {
+      "en": "Plant species name validation tool",
+      "fr": "Outil de validation des noms scientifiques pour les plantes",
+      "sp": "Soy el modulo 1"
+    },
+    {
       "en": "I am module 1",
       "fr": "Je suis le module 1",
       "sp": "Soy el modulo 1"

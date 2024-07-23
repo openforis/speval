@@ -20,14 +20,11 @@
 shiny_run_speval <- function(...) {
 
   ## GLOBAL ####################################################################
-  ## Initiate translation
-  ## !!! TO BE REMOVED IN PACKAGE !!!
-  ## !!! In a package the translation folder needs to be directed to the package location
-  #i18n <- shiny.i18n::Translator$new(translation_json_path = 'assets/translations.json')
+  shiny::addResourcePath(prefix = "www", directoryPath = system.file("app/www", package = "speval"))
+
   i18n <- shiny.i18n::Translator$new(
-    translation_json_path = system.file("assets/translations.json", package = "MCredd")
-    )
-  # i18n <- shiny.i18n::Translator$new(translation_csvs_path = "assets/translation")
+    translation_json_path = system.file("app/www/translations.json", package = "speval")
+  )
   i18n$set_translation_language('en')
   ## !!! END REMOVE
 
@@ -49,31 +46,32 @@ shiny_run_speval <- function(...) {
     shinyjs::useShinyjs(),
     shinyWidgets::useSweetAlert(),
     shiny.i18n::usei18n(i18n),
-    # tags$head(tags$link(rel = "stylesheet", type = "text/css", href = "style.css")),
     htmltools::htmlDependency(
       name = "flag-icons",
       version = "6.6.6",
       src = c(href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@6.6.6/"),
       stylesheet = "css/flag-icons.min.css"
     ),
-    #tags$head(includeHTML("assets/add-favicon.html")),
-    tags$head(includeHTML(system.file("assets/add-favicon.html", package = "speval"))),
-    # tags$head(includeHTML("ga-tracker-draft-head.html")),
+    #shiny::includeCSS(system.file("www/style.css", package = "speval")),
+    tags$head(
+      tags$link(rel = "stylesheet", type = "text/css", href = "www/custom.css"),
+      includeHTML(system.file("app/www/add-favicon.html", package = "speval")),
+      #includeHTML("ga-tracker-draft-head.html")
+      ),
     # leafletjs,
+
     ## UI elements -------------------------------------------------------------
     page_navbar(
       id = "navbar",
       ## ++ Styling ++++++
-      #title = div(img(src="assets/Arena-Logo.png", width = '100%'), i18n$t("Timor Leste REDD+ Geoportal"), style = "display:inline;"),
       title = div(
         tags$a(
           href = "https://openforis.org/solutions/arena/",
           #alt = "arena-helpers",
-          tags$img(src="assets/arena-helpers3.png", height = '60px'),
+          tags$img(src="www/arena-helpers3.png", height = '60px'),
           .noWS = "before-end"
           ),
-        #img(src="assets/arena-helpers3.png", height = '60px'),
-        i18n$t("Species name validation tool"),
+        i18n$t("Plant species name validation tool"),
         style = "display:inline;font-color: black !important"
         ),
       window_title = "species validation",

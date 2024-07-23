@@ -21,7 +21,7 @@ mod_info_UI <- function(id){
       activities and grouped under ", tags$code("arena-helpers")
       ),
     br(),
-    h4("Open Foris Arena ", tags$img(src="assets/Arena-Logo.png", height = '30px')),
+    h4("Open Foris Arena ", tags$img(src="www/Arena-Logo.png", height = '30px')),
     p(
       "They aim to provide additional functionality to ",
       tags$a(
