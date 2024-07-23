@@ -98,7 +98,7 @@ shiny_run_speval <- function(...) {
         title = i18n$t("Info"), #OR title = "I am module 1"
         value = "mod1",
         icon = icon("info"),
-        mod_info_UI("tab_info_UI") ## See R/mod1_UI.R
+        mod_info_UI("tab_info") ## See R/mod1_UI.R
       ),
 
       nav_panel(
@@ -139,7 +139,7 @@ shiny_run_speval <- function(...) {
     r_lang <- reactive({ input$language })
 
     ## + Module server functions ============================================
-    # mod_home_server("tab_home", rv = rv)
+    mod_info_server("tab_info", rv = rv)
     #
     # mod_CV_server("tab_cv", rv = rv)
     #

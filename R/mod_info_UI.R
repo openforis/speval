@@ -15,6 +15,19 @@ mod_info_UI <- function(id){
   card_left <- card(
     h1("Welcome"),
 
+    h4("Objective"),
+
+    p(
+      "This app aims to help field inventory teams and other plants observers and
+      enthusiasts to validate and keep your species list updated. The script validates
+      a list of species names given in a CSV file."
+    ),
+
+    p(
+      "you are using the package ", tags$code("speval"), "version: ",
+      textOutput(outputId = ns("speval_version"), inline = TRUE), "."
+    ),
+
     h4("What is ", tags$code("arena-helpers")),
     p(
       "This app is part of of a collection of tools designed to support Forest inventory related
@@ -39,11 +52,11 @@ mod_info_UI <- function(id){
 
   ## Emission factors ----------------------------------------------------------
   card_right_sub1 <- card(
-    p("Placeholder for content"),
+    p("Placeholder for content sub1"),
   )
 
   card_right_sub2 <- card(
-    p("placeholder for content")
+    p("placeholder for content sub2")
   )
 
   card_right_top <- card(
